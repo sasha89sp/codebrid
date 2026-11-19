@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -8,9 +9,11 @@ import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../services/app_storage.dart';
+import '../services/backup_service.dart';
 import '../services/downloads_watcher_service.dart';
 import '../services/file_writer.dart';
 import '../services/git_service.dart';
+import '../services/github_repo_service.dart';
 import '../services/project_naming.dart';
 import '../services/response_parser.dart';
 import '../services/build_bundle_service.dart';
@@ -47,6 +50,14 @@ class ProjectProvider extends ChangeNotifier {
   String? pendingBuildZipPath;
   String? pendingBuildSuggestedDir;
   String? lastBuildArchiveName;
+  String githubToken = '';
+  String githubOwner = '';
+  bool autoBackupEnabled = true;
+  int autoBackupIntervalMinutes = 30;
+  String? backupDirectory;
+  String? lastBackupZipPath;
+  String? lastAutoBackupAt;
+  Timer? _autoBackupTimer;
 
   AgentTemplateItem? get selectedTemplate {
     for (final template in templates) {
@@ -71,6 +82,16 @@ class ProjectProvider extends ChangeNotifier {
         downloadsWatchPath = settings.downloadsWatchPath!.trim();
       }
       downloadsWatcherEnabled = settings.downloadsWatcherEnabled;
+      githubToken = settings.githubToken;
+      githubOwner = settings.githubOwner;
+      autoBackupEnabled = settings.autoBackupEnabled;
+      autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
+      backupDirectory = settings.backupDirectory;
+      lastAutoBackupAt = settings.lastAutoBackupAt;
+      _configureAutoBackupTimer();
+      if (autoBackupEnabled) {
+        unawaited(_runAutoBackupIfDue());
+      }
       if (settings.tabOrder.isNotEmpty) {
         const allowed = <String>['agent', 'import', 'files', 'auto_deploy'];
         final normalized = <String>[];
@@ -111,6 +132,7 @@ class ProjectProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _autoBackupTimer?.cancel();
     unawaited(_downloadsWatcher.stop());
     super.dispose();
   }
@@ -201,11 +223,38 @@ class ProjectProvider extends ChangeNotifier {
         .replaceAll('\r', '\n');
   }
 
+  Future<void> saveGitHubCredentials({
+    required String token,
+    required String owner,
+  }) async {
+    githubToken = token.trim();
+    githubOwner = owner.trim();
+    await storage.saveGitHubCredentials(
+      githubToken: githubToken,
+      githubOwner: githubOwner,
+    );
+    notifyListeners();
+  }
+
   Future<void> createProject({
     required String name,
     required String description,
     required String outputPath,
     String? templateId,
+    bool createRemoteRepo = false,
+    bool privateRepo = true,
+    String? repoName,
+    String? githubOwnerOverride,
+    String? githubTokenOverride,
+    String gitBranch = 'main',
+    bool createStarterFiles = true,
+    bool includeReadme = true,
+    bool includeGitignore = true,
+    bool includeAgentFile = true,
+    bool pushInitialCommit = true,
+    bool autoEnableDeploy = true,
+    bool autoSyncOnReject = true,
+    String? zipNameFilterOverride,
   }) async {
     final cleanName = name.trim();
     if (cleanName.isEmpty) throw const FormatException('Введите название проекта.');
@@ -221,7 +270,7 @@ class ProjectProvider extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      final project = await storage.createProject(
+      var project = await storage.createProject(
         name: cleanName,
         packageName: ProjectNaming.packageName(cleanName),
         description: description,
@@ -229,6 +278,101 @@ class ProjectProvider extends ChangeNotifier {
         templateContent: template.content,
         requestedOutputPath: outputPath,
       );
+
+      final renderedAgent = AgentTemplate.render(
+        template: template.content,
+        projectName: project.name,
+        projectSlug: project.packageName,
+        description: project.description,
+      );
+
+      if (createStarterFiles) {
+        await GitHubRepoService.scaffoldStarterFiles(
+          directory: project.outputPath,
+          projectName: project.name,
+          packageName: project.packageName,
+          description: project.description,
+          agentContent: renderedAgent,
+          includeReadme: includeReadme,
+          includeGitignore: includeGitignore,
+          includeAgentFile: includeAgentFile,
+        );
+      }
+
+      final cleanBranch = gitBranch.trim().isEmpty ? 'main' : gitBranch.trim();
+      final defaultFilter = (zipNameFilterOverride != null && zipNameFilterOverride.trim().isNotEmpty)
+          ? zipNameFilterOverride.trim()
+          : cleanName.replaceAll(RegExp(r'\s+'), '');
+
+      String summarySuffix = '';
+      if (createRemoteRepo) {
+        final effectiveToken = (githubTokenOverride ?? '').trim().isNotEmpty
+            ? githubTokenOverride!.trim()
+            : githubToken;
+        final effectiveOwner = (githubOwnerOverride ?? '').trim().isNotEmpty
+            ? githubOwnerOverride!.trim()
+            : githubOwner;
+        if (effectiveToken.isNotEmpty || effectiveOwner.isNotEmpty) {
+          await saveGitHubCredentials(
+            token: effectiveToken,
+            owner: effectiveOwner,
+          );
+        }
+
+        final targetRepo = (repoName != null && repoName.trim().isNotEmpty)
+            ? repoName.trim()
+            : cleanName;
+
+        final provision = await GitHubRepoService.createRemoteRepository(
+          repoName: targetRepo,
+          isPrivate: privateRepo,
+          description: description,
+          token: effectiveToken,
+          ownerOrOrg: effectiveOwner,
+          branch: cleanBranch,
+          localDirectory: project.outputPath,
+          pushInitialCommit: pushInitialCommit,
+          commitMessage: 'Initial commit for ${project.name}',
+        );
+        for (final line in provision.logs) {
+          _appendDeployLog(line);
+        }
+        if (!provision.success) {
+          throw StateError(
+            provision.errorMessage ?? 'Не удалось создать репозиторий на GitHub.',
+          );
+        }
+
+        final updatedProj = project.copyWith(
+          gitRepoUrl: provision.remoteUrl ?? '',
+          gitBranch: cleanBranch,
+          autoDeployEnabled: autoEnableDeploy,
+          zipNameFilter: defaultFilter,
+          autoSyncOnReject: autoSyncOnReject,
+        );
+        await storage.updateProject(updatedProj);
+        project = updatedProj;
+        summarySuffix = ' Репозиторий создан (${privateRepo ? 'приватный' : 'публичный'})'
+            '${provision.htmlUrl != null ? ': ${provision.htmlUrl}' : ''}.';
+      } else {
+        final updatedProj = project.copyWith(
+          gitBranch: cleanBranch,
+          autoDeployEnabled: autoEnableDeploy,
+          zipNameFilter: defaultFilter,
+          autoSyncOnReject: autoSyncOnReject,
+        );
+        await storage.updateProject(updatedProj);
+        project = updatedProj;
+      }
+
+      if (autoEnableDeploy && !downloadsWatcherEnabled) {
+        await setDownloadsWatcher(enabled: true);
+      }
+      _appendDeployLog(
+        'Автозаполнены настройки авто-деплоя для «${project.name}»: '
+        'autoDeploy=${project.autoDeployEnabled}, ветка=${project.gitBranch}, фильтр="${project.zipNameFilter}".',
+      );
+
       projects = await storage.loadProjects();
       currentProject = _findProject(project.id) ?? project;
       previewFiles = <GeneratedFile>[];
@@ -237,7 +381,7 @@ class ProjectProvider extends ChangeNotifier {
       await storage.saveLastProject(project.id);
       selectedTemplateId = template.id;
       await storage.saveSelectedTemplate(template.id);
-      infoMessage = 'Проект «${project.name}» создан.';
+      infoMessage = 'Проект «${project.name}» создан.$summarySuffix';
     } finally {
       isWorking = false;
       notifyListeners();
@@ -619,6 +763,116 @@ class ProjectProvider extends ChangeNotifier {
     tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
     await storage.saveTabOrder(tabOrder);
     notifyListeners();
+  }
+
+  void _configureAutoBackupTimer() {
+    _autoBackupTimer?.cancel();
+    _autoBackupTimer = null;
+    if (!autoBackupEnabled) return;
+    final minutes = autoBackupIntervalMinutes.clamp(5, 1440);
+    _autoBackupTimer = Timer.periodic(Duration(minutes: minutes), (_) {
+      unawaited(_runAutoBackupIfDue(force: false));
+    });
+  }
+
+  Future<void> _runAutoBackupIfDue({bool force = false}) async {
+    if (!autoBackupEnabled && !force) return;
+    final now = DateTime.now();
+    if (!force && lastAutoBackupAt != null && lastAutoBackupAt!.isNotEmpty) {
+      final parsed = DateTime.tryParse(lastAutoBackupAt!);
+      if (parsed != null) {
+        final elapsed = now.difference(parsed);
+        if (elapsed.inMinutes < autoBackupIntervalMinutes.clamp(5, 1440)) {
+          return;
+        }
+      }
+    }
+    await createBackupNow(isAuto: true, silent: true);
+  }
+
+  Future<void> updateBackupSettings({
+    required bool enabled,
+    required int intervalMinutes,
+    String? customBackupDir,
+  }) async {
+    autoBackupEnabled = enabled;
+    autoBackupIntervalMinutes = intervalMinutes.clamp(5, 1440);
+    final trimmed = customBackupDir?.trim() ?? '';
+    backupDirectory = trimmed.isEmpty ? null : trimmed;
+    await storage.saveBackupSettings(
+      autoBackupEnabled: autoBackupEnabled,
+      autoBackupIntervalMinutes: autoBackupIntervalMinutes,
+      backupDirectory: backupDirectory,
+    );
+    _configureAutoBackupTimer();
+    if (autoBackupEnabled) {
+      await _runAutoBackupIfDue(force: true);
+    }
+    notifyListeners();
+  }
+
+  Future<BackupResult> createBackupNow({
+    bool isAuto = false,
+    bool silent = false,
+  }) async {
+    final extraDirs = <String>[
+      for (final proj in projects)
+        if (Directory(proj.outputPath).existsSync()) proj.outputPath,
+    ];
+    final res = await BackupService.createFullBackup(
+      dataDirectory: storage.dataDirectory,
+      customBackupDirectory: backupDirectory,
+      isAuto: isAuto,
+      extraDirectories: extraDirs,
+    );
+    if (res.success && res.backupZipPath != null) {
+      lastBackupZipPath = res.backupZipPath;
+      final stampIso = DateTime.now().toIso8601String();
+      lastAutoBackupAt = stampIso;
+      await storage.recordLastAutoBackup(stampIso);
+      _appendDeployLog(res.message);
+      if (!silent) {
+        infoMessage = res.message;
+      }
+      notifyListeners();
+    } else if (!silent) {
+      errorMessage = res.message;
+      notifyListeners();
+    }
+    return res;
+  }
+
+  Future<BackupResult> restoreBackup(String zipPath) async {
+    isWorking = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final res = await BackupService.restoreFromBackupZip(
+        zipPath: zipPath,
+        dataDirectory: storage.dataDirectory,
+      );
+      if (!res.success) {
+        errorMessage = res.message;
+        return res;
+      }
+      projects = await storage.loadProjects();
+      if (projects.isNotEmpty) {
+        currentProject = _findProject(currentProject?.id) ?? projects.first;
+        await _loadCurrentProjectDetails();
+      }
+      final settings = await storage.loadSettings();
+      autoBackupEnabled = settings.autoBackupEnabled;
+      autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
+      backupDirectory = settings.backupDirectory;
+      lastAutoBackupAt = settings.lastAutoBackupAt;
+      _configureAutoBackupTimer();
+      infoMessage = res.message;
+      _appendDeployLog(res.message);
+      return res;
+    } finally {
+      isWorking = false;
+      notifyListeners();
+    }
   }
 
   void clearDeployLogs() {

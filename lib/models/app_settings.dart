@@ -7,6 +7,12 @@ class AppSettings {
     this.downloadsWatchPath,
     this.downloadsWatcherEnabled = false,
     this.tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
+    this.githubToken = '',
+    this.githubOwner = '',
+    this.autoBackupEnabled = true,
+    this.autoBackupIntervalMinutes = 30,
+    this.backupDirectory,
+    this.lastAutoBackupAt,
   });
 
   final String? lastProjectId;
@@ -16,6 +22,12 @@ class AppSettings {
   final String? downloadsWatchPath;
   final bool downloadsWatcherEnabled;
   final List<String> tabOrder;
+  final String githubToken;
+  final String githubOwner;
+  final bool autoBackupEnabled;
+  final int autoBackupIntervalMinutes;
+  final String? backupDirectory;
+  final String? lastAutoBackupAt;
 
   AppSettings copyWith({
     String? lastProjectId,
@@ -25,7 +37,13 @@ class AppSettings {
     String? downloadsWatchPath,
     bool? downloadsWatcherEnabled,
     List<String>? tabOrder,
-    bool clearLastProject = false,
+    String? githubToken,
+    String? githubOwner,
+    bool? autoBackupEnabled,
+    int? autoBackupIntervalMinutes,
+    String? backupDirectory,
+    String? lastAutoBackupAt,
+  bool clearBackupDirectory = false,    bool clearLastProject = false,
   }) {
     return AppSettings(
       lastProjectId: clearLastProject ? null : (lastProjectId ?? this.lastProjectId),
@@ -35,6 +53,12 @@ class AppSettings {
       downloadsWatchPath: downloadsWatchPath ?? this.downloadsWatchPath,
       downloadsWatcherEnabled: downloadsWatcherEnabled ?? this.downloadsWatcherEnabled,
       tabOrder: tabOrder ?? this.tabOrder,
+      githubToken: githubToken ?? this.githubToken,
+      githubOwner: githubOwner ?? this.githubOwner,
+      autoBackupEnabled: autoBackupEnabled ?? this.autoBackupEnabled,
+      autoBackupIntervalMinutes: autoBackupIntervalMinutes ?? this.autoBackupIntervalMinutes,
+      backupDirectory: clearBackupDirectory ? null : (backupDirectory ?? this.backupDirectory),
+      lastAutoBackupAt: lastAutoBackupAt ?? this.lastAutoBackupAt,
     );
   }
 
@@ -46,6 +70,12 @@ class AppSettings {
         'downloadsWatchPath': downloadsWatchPath,
         'downloadsWatcherEnabled': downloadsWatcherEnabled,
         'tabOrder': tabOrder,
+        'githubToken': githubToken,
+        'githubOwner': githubOwner,
+        'autoBackupEnabled': autoBackupEnabled,
+        'autoBackupIntervalMinutes': autoBackupIntervalMinutes,
+        'backupDirectory': backupDirectory,
+        'lastAutoBackupAt': lastAutoBackupAt,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -59,6 +89,12 @@ class AppSettings {
       tabOrder: (json['tabOrder'] is List)
           ? (json['tabOrder'] as List).map((e) => e.toString()).toList()
           : const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
+      githubToken: json['githubToken']?.toString() ?? '',
+      githubOwner: json['githubOwner']?.toString() ?? '',
+      autoBackupEnabled: json['autoBackupEnabled'] != false,
+      autoBackupIntervalMinutes: (json['autoBackupIntervalMinutes'] as num?)?.toInt() ?? 30,
+      backupDirectory: json['backupDirectory'] as String?,
+      lastAutoBackupAt: json['lastAutoBackupAt'] as String?,
     );
   }
 }

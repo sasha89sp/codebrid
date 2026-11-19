@@ -333,6 +333,37 @@ class AppStorage {
     ));
   }
 
+  Future<void> saveGitHubCredentials({
+    required String githubToken,
+    required String githubOwner,
+  }) async {
+    final current = await loadSettings();
+    await saveSettings(current.copyWith(
+      githubToken: githubToken.trim(),
+      githubOwner: githubOwner.trim(),
+    ));
+  }
+
+  Future<void> saveBackupSettings({
+    required bool autoBackupEnabled,
+    required int autoBackupIntervalMinutes,
+    String? backupDirectory,
+  }) async {
+    final current = await loadSettings();
+    final cleanDir = backupDirectory?.trim() ?? '';
+    await saveSettings(current.copyWith(
+      autoBackupEnabled: autoBackupEnabled,
+      autoBackupIntervalMinutes: autoBackupIntervalMinutes.clamp(5, 1440),
+      backupDirectory: cleanDir.isEmpty ? null : cleanDir,
+      clearBackupDirectory: cleanDir.isEmpty,
+    ));
+  }
+
+  Future<void> recordLastAutoBackup(String isoTimestamp) async {
+    final current = await loadSettings();
+    await saveSettings(current.copyWith(lastAutoBackupAt: isoTimestamp));
+  }
+
   Future<void> updateProject(CodeProject project) async {
     final projectJson = project.toJson();
     projectJson['projectDirectory'] = p.relative(project.projectDirectory, from: dataDirectory);
