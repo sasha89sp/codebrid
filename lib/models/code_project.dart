@@ -20,6 +20,7 @@ class CodeProject {
     this.buildTargetDirectory = '',
     this.buildZipFilter = '',
     this.buildPreservedFiles = '',
+    this.buildTakeAllPublicBuilds = true,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -49,6 +50,7 @@ class CodeProject {
   final String buildTargetDirectory;
   final String buildZipFilter;
   final String buildPreservedFiles;
+  final bool buildTakeAllPublicBuilds;
 
   CodeProject copyWith({
     String? name,
@@ -68,6 +70,7 @@ class CodeProject {
     String? buildTargetDirectory,
     String? buildZipFilter,
     String? buildPreservedFiles,
+    bool? buildTakeAllPublicBuilds,
   }) {
     return CodeProject(
       id: id,
@@ -90,6 +93,7 @@ class CodeProject {
       buildTargetDirectory: buildTargetDirectory ?? this.buildTargetDirectory,
       buildZipFilter: buildZipFilter ?? this.buildZipFilter,
       buildPreservedFiles: buildPreservedFiles ?? this.buildPreservedFiles,
+      buildTakeAllPublicBuilds: buildTakeAllPublicBuilds ?? this.buildTakeAllPublicBuilds,
     );
   }
 
@@ -114,6 +118,7 @@ class CodeProject {
         'buildTargetDirectory': buildTargetDirectory,
         'buildZipFilter': buildZipFilter,
         'buildPreservedFiles': buildPreservedFiles,
+        'buildTakeAllPublicBuilds': buildTakeAllPublicBuilds,
       };
 
   factory CodeProject.fromJson(
@@ -145,6 +150,7 @@ class CodeProject {
       buildTargetDirectory: json['buildTargetDirectory']?.toString() ?? '',
       buildZipFilter: json['buildZipFilter']?.toString() ?? '',
       buildPreservedFiles: json['buildPreservedFiles']?.toString() ?? '',
+      buildTakeAllPublicBuilds: json['buildTakeAllPublicBuilds'] != false,
     );
   }
 

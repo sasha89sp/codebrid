@@ -23,8 +23,10 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _autoDeployEnabled = false;
   bool _deleteZipAfterDeploy = false;
   bool _cleanBeforeExtract = false;
+  String? _shownPendingBuildZipPath;
   bool _buildCaptureEnabled = false;
   bool _buildAskTargetBeforeExtract = false;
+  bool _buildTakeAllPublicBuilds = true;
   final TextEditingController _buildTargetDirController = TextEditingController();
   final TextEditingController _buildFilterController = TextEditingController();
   final TextEditingController _buildPreservedController = TextEditingController();
@@ -56,6 +58,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       _cleanBeforeExtract = project.cleanBeforeExtract;
       _buildCaptureEnabled = project.buildCaptureEnabled;
       _buildAskTargetBeforeExtract = project.buildAskTargetBeforeExtract;
+      _buildTakeAllPublicBuilds = project.buildTakeAllPublicBuilds;
       _buildTargetDirController.text = project.buildTargetDirectory;
       _buildFilterController.text = project.buildZipFilter;
       _buildPreservedController.text = project.buildPreservedFiles;
@@ -105,6 +108,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       buildTargetDirectory: _buildTargetDirController.text,
       buildZipFilter: _buildFilterController.text,
       buildPreservedFiles: _buildPreservedController.text,
+      buildTakeAllPublicBuilds: _buildTakeAllPublicBuilds,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -334,6 +338,14 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                   value: _buildAskTargetBeforeExtract,
                   onChanged: (bool? value) =>
                       setState(() => _buildAskTargetBeforeExtract = value ?? false),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Публичные сборки: брать все подходящие ZIP-архивы без отсева по фильтру'),
+                  value: _buildTakeAllPublicBuilds,
+                  onChanged: (bool? value) =>
+                      setState(() => _buildTakeAllPublicBuilds = value ?? true),
                 ),
                 const SizedBox(height: 8),
                 Row(

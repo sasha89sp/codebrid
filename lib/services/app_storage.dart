@@ -326,6 +326,13 @@ class AppStorage {
     ));
   }
 
+  Future<void> saveTabOrder(List<String> tabOrder) async {
+    final current = await loadSettings();
+    await saveSettings(current.copyWith(
+      tabOrder: List<String>.from(tabOrder),
+    ));
+  }
+
   Future<void> updateProject(CodeProject project) async {
     final projectJson = project.toJson();
     projectJson['projectDirectory'] = p.relative(project.projectDirectory, from: dataDirectory);

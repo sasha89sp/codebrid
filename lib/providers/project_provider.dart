@@ -71,7 +71,7 @@ class ProjectProvider extends ChangeNotifier {
       }
       downloadsWatcherEnabled = settings.downloadsWatcherEnabled;
       if (settings.tabOrder.isNotEmpty) {
-        final allowed = const <String>['agent', 'import', 'files', 'auto_deploy'];
+        const allowed = <String>['agent', 'import', 'files', 'auto_deploy'];
         final normalized = <String>[];
         for (final id in settings.tabOrder) {
           if (allowed.contains(id) && !normalized.contains(id)) {
@@ -327,7 +327,8 @@ class ProjectProvider extends ChangeNotifier {
     final fileName = p.basename(zipPath);
     if (project != null && project.buildCaptureEnabled) {
       final filter = project.buildZipFilter.trim();
-      final matchesFilter = filter.isEmpty ||
+      final matchesFilter = project.buildTakeAllPublicBuilds ||
+          filter.isEmpty ||
           fileName.toLowerCase().contains(filter.toLowerCase());
       if (matchesFilter) {
         final baseBuildsDir = project.buildTargetDirectory.trim().isNotEmpty
@@ -353,6 +354,7 @@ class ProjectProvider extends ChangeNotifier {
     required String buildTargetDirectory,
     required String buildZipFilter,
     required String buildPreservedFiles,
+    bool buildTakeAllPublicBuilds = true,
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -362,6 +364,7 @@ class ProjectProvider extends ChangeNotifier {
       buildTargetDirectory: buildTargetDirectory.trim(),
       buildZipFilter: buildZipFilter.trim(),
       buildPreservedFiles: buildPreservedFiles.trim(),
+      buildTakeAllPublicBuilds: buildTakeAllPublicBuilds,
     );
     await storage.updateProject(updated);
     currentProject = updated;
