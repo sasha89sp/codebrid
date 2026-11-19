@@ -1,15 +1,16 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.57: удалён неиспользуемый импорт dart:convert в build_bundle_service.dart"
+current_stage: "Релиз 2.1.59: вкладка «Заметки» с папками и заметками для багов по каждому проекту"
 
 completed:
-  - "Удалён неиспользуемый импорт dart:convert в lib/services/build_bundle_service.dart"
-  - "Обновлена версия до 2.1.57+57 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлена модель ProjectNotesStore и сохранение в data/projects/<projectId>/notes.json через AppStorage"
+  - "Добавлена вкладка «Заметки» (lib/widgets/project_notes_tab.dart) с папками, поиском и кнопкой «Записать баг»"
+  - "Обновлена версия до 2.1.59+59 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить прохождение Analyze Dart code и сборку Windows на GitHub Actions"
+  - "Проверить сборку 2.1.59 на GitHub Actions, создание папок и заметок и их привязку к каждому проекту"
 
 next_step: >
-  Залить архив 2.1.57 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
+  Залить архив 2.1.59 в репозиторий и проверить работу вкладки «Заметки» в каждом проекте.

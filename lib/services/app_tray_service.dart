@@ -45,8 +45,18 @@ class AppTrayService with TrayListener {
   }
 
   Future<void> restoreWindow() async {
+    final wasMaximized = await windowManager.isMaximized();
+    final wasFullScreen = await windowManager.isFullScreen();
+    final savedSettings = await windowSizeListener?.storage.loadSettings();
     await windowManager.show();
-    await windowManager.restore();
+    if (await windowManager.isMinimized()) {
+      await windowManager.restore();
+    }
+    if (wasFullScreen || (savedSettings?.windowIsFullScreen ?? false)) {
+      await windowManager.setFullScreen(true);
+    } else if (wasMaximized || (savedSettings?.windowIsMaximized ?? false)) {
+      await windowManager.maximize();
+    }
     await windowManager.focus();
   }
 

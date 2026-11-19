@@ -17,11 +17,33 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.57';
-  static const int currentBuildNumber = 57;
+  static const String currentVersion = '2.1.59';
+  static const int currentBuildNumber = 59;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.59',
+      buildNumber: 59,
+      title: 'Вкладка «Заметки» с папками и заметками для багов с привязкой к проекту',
+      summary: 'Добавлена новая вкладка «Заметки» для каждого проекта с созданием папок, заметок, быстрым шаблоном записи бага и сохранением в data/projects/<id>/notes.json.',
+      changes: [
+        'Добавлена модель ProjectNotesStore / ProjectNoteFolder / ProjectNoteItem и сохранение заметок строго внутри каталога выбранного проекта (notes.json)',
+        'Добавлена вкладка «Заметки» (ProjectNotesTab) с папками, поиском, быстрой кнопкой «Записать баг» и встроенным редактором заметок',
+        'Обновлена версия до 2.1.59+59 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
+    ReleaseEntry(
+      version: '2.1.58',
+      buildNumber: 58,
+      title: 'Сохранение развёрнутого состояния окна после сворачивания и разворачивания',
+      summary: 'При сворачивании окна, развёрнутого на весь экран, запоминается его состояние максимизации/полного экрана, и при возврате из панели задач или трея окно снова открывается на весь экран.',
+      changes: [
+        'В MacOsWindowTitleBar добавлено запоминание состояния максимизации/полного экрана перед сворачиванием и автоматическое восстановление при возврате окна',
+        'В WindowSizeListener и AppTrayService защищено сохранение флагов windowIsMaximized/windowIsFullScreen при сворачивании окна',
+        'Обновлена версия до 2.1.58+58 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.57',
       buildNumber: 57,
@@ -85,28 +107,6 @@ class AppVersion {
         'Добавлены SnackBar-уведомления при успешном сохранении и при ошибке сохранения шаблона',
         'Отключены autocorrect и enableSuggestions в полях названия и текста шаблона',
         'Обновлена версия до 2.1.52+52 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.51',
-      buildNumber: 51,
-      title: 'Полноэкранный редактор библиотеки шаблонов с рабочим вводом текста',
-      summary: 'Библиотека шаблонов AGENT.md открывается как полноценный экран Scaffold (MaterialPageRoute) без модального Dialog-слоя, который блокировал ввод текста на Windows.',
-      changes: [
-        'Переведена библиотека шаблонов из модального Dialog на полноценный Scaffold-экран (TemplateManagerScreen)',
-        'Убран ручной перехват фокуса в onTap у TextField, чтобы ввод текста, курсор и выделение работали так же, как в основном редакторе инструкции',
-        'Обновлена версия до 2.1.51+51 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.50',
-      buildNumber: 50,
-      title: 'Поле ввода GitHub Token во вкладке «Распаковка сборок»',
-      summary: 'Добавлено поле GitHub Token с показом/скрытием и автоматическим сохранением в AppSettings прямо во вкладке «Распаковка сборок» для скачивания артефактов GitHub Actions.',
-      changes: [
-        'Добавлено поле ввода GitHub Token (_tokenController) с кнопкой показа/скрытия во вкладке BuildCaptureTab',
-        'Токен сохраняется в AppSettings при сохранении настроек сборки и перед ручной проверкой сборок на GitHub',
-        'Обновлена версия до 2.1.50+50 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

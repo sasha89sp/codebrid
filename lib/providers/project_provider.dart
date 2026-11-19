@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
+import '../models/project_note.dart';
 import '../models/generated_file.dart';
 import '../services/agent_template.dart';
 import '../services/app_storage.dart';
@@ -46,7 +47,7 @@ class ProjectProvider extends ChangeNotifier {
 
   String downloadsWatchPath = DownloadsWatcherService.defaultDownloadsPath();
   bool downloadsWatcherEnabled = false;
-  List<String> tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
+  List<String> tabOrder = const <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'];
   final List<String> deployLogs = <String>[];
   String? lastDeployStatus;
   GitStatusSummary? lastGitStatus;
@@ -151,7 +152,7 @@ class ProjectProvider extends ChangeNotifier {
         unawaited(_backupCoordinator.runIfDue());
       }
       if (settings.tabOrder.isNotEmpty) {
-        const allowed = <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
+        const allowed = <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'];
         final normalized = <String>[];
         for (final id in settings.tabOrder) {
           if (allowed.contains(id) && !normalized.contains(id)) {
@@ -515,6 +516,7 @@ class ProjectProvider extends ChangeNotifier {
     if (project == null) return;
     agentContent = await storage.readAgent(project);
     outputFiles = await storage.listOutputFiles(project);
+    currentProjectNotes = await storage.loadProjectNotes(project);
   }
 
   Future<void> refreshOutputFiles() async {
@@ -1042,6 +1044,123 @@ class ProjectProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  Future<ProjectNoteFolder?> createProjectNoteFolder(String name) async {
+    final project = currentProject;
+    if (project == null) return null;
+    final clean = name.trim();
+    if (clean.isEmpty) return null;
+    final folder = ProjectNoteFolder(
+      id: 'folder_${DateTime.now().microsecondsSinceEpoch}',
+      name: clean,
+      createdAt: DateTime.now(),
+    );
+    final updated = currentProjectNotes.copyWith(
+      folders: <ProjectNoteFolder>[...currentProjectNotes.folders, folder],
+    );
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+    return folder;
+  }
+
+  Future<void> renameProjectNoteFolder(String folderId, String newName) async {
+    final project = currentProject;
+    if (project == null) return;
+    final clean = newName.trim();
+    if (clean.isEmpty) return;
+    final updatedFolders = currentProjectNotes.folders
+        .map((f) => f.id == folderId ? f.copyWith(name: clean) : f)
+        .toList();
+    final updated = currentProjectNotes.copyWith(folders: updatedFolders);
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+  }
+
+  Future<void> deleteProjectNoteFolder(String folderId) async {
+    final project = currentProject;
+    if (project == null) return;
+    final updatedFolders =
+        currentProjectNotes.folders.where((f) => f.id != folderId).toList();
+    final updatedNotes = currentProjectNotes.notes
+        .map((n) => n.folderId == folderId ? n.copyWith(clearFolder: true) : n)
+        .toList();
+    final updated = currentProjectNotes.copyWith(
+      folders: updatedFolders,
+      notes: updatedNotes,
+    );
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+  }
+
+  Future<ProjectNoteItem?> createProjectNote({
+    String? folderId,
+    String title = 'Новая заметка',
+    String content = '',
+  }) async {
+    final project = currentProject;
+    if (project == null) return null;
+    final now = DateTime.now();
+    final validFolderId = (folderId != null &&
+            currentProjectNotes.folders.any((f) => f.id == folderId))
+        ? folderId
+        : null;
+    final note = ProjectNoteItem(
+      id: 'note_${now.microsecondsSinceEpoch}',
+      folderId: validFolderId,
+      title: title.trim().isEmpty ? 'Новая заметка' : title.trim(),
+      content: content,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final updated = currentProjectNotes.copyWith(
+      notes: <ProjectNoteItem>[note, ...currentProjectNotes.notes],
+    );
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+    return note;
+  }
+
+  Future<void> saveProjectNote({
+    required String noteId,
+    required String title,
+    required String content,
+    String? folderId,
+    bool updateFolder = false,
+  }) async {
+    final project = currentProject;
+    if (project == null) return;
+    final cleanTitle = title.trim().isEmpty ? 'Без названия' : title.trim();
+    final now = DateTime.now();
+    final updatedNotes = currentProjectNotes.notes.map((n) {
+      if (n.id != noteId) return n;
+      return n.copyWith(
+        title: cleanTitle,
+        content: content,
+        folderId: updateFolder ? folderId : n.folderId,
+        clearFolder: updateFolder && (folderId == null || folderId.isEmpty),
+        updatedAt: now,
+      );
+    }).toList();
+    final updated = currentProjectNotes.copyWith(notes: updatedNotes);
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+  }
+
+  Future<void> deleteProjectNote(String noteId) async {
+    final project = currentProject;
+    if (project == null) return;
+    final updatedNotes =
+        currentProjectNotes.notes.where((n) => n.id != noteId).toList();
+    final updated = currentProjectNotes.copyWith(notes: updatedNotes);
+    currentProjectNotes = updated;
+    await storage.saveProjectNotes(project, updated);
+    notifyListeners();
+  }
+
   Future<void> reorderTabs(int oldIndex, int newIndex) async {
     final list = List<String>.from(tabOrder);
     if (oldIndex < 0 || oldIndex >= list.length) return;
@@ -1055,7 +1174,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> resetTabOrder() async {
-    tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
+    tabOrder = const <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'];
     await storage.saveTabOrder(tabOrder);
     notifyListeners();
   }

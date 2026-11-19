@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,9 @@ class MacOsWindowTitleBar extends StatefulWidget {
 class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> with WindowListener {
   bool _hoveringGroup = false;
   bool _isMaximized = false;
+  bool _isMinimized = false;
+  bool _restoreMaximizedAfterMinimize = false;
+  bool _restoreFullScreenAfterMinimize = false;
 
   @override
   void initState() {
@@ -42,25 +46,97 @@ class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> with WindowLi
 
   @override
   void onWindowMaximize() {
+    _isMinimized = false;
     if (mounted) setState(() => _isMaximized = true);
   }
 
   @override
   void onWindowUnmaximize() {
+    if (_isMinimized) return;
     if (mounted) setState(() => _isMaximized = false);
+  }
+
+  @override
+  void onWindowEnterFullScreen() {
+    _isMinimized = false;
+    if (mounted) setState(() => _isMaximized = true);
+  }
+
+  @override
+  void onWindowLeaveFullScreen() {
+    if (_isMinimized) return;
+    unawaited(_refreshMaximized());
+  }
+
+  @override
+  void onWindowMinimize() {
+    _isMinimized = true;
+    if (_isMaximized) {
+      _restoreMaximizedAfterMinimize = true;
+    }
+  }
+
+  @override
+  void onWindowRestore() {
+    _handleRestoredFromMinimize();
+  }
+
+  @override
+  void onWindowFocus() {
+    if (_isMinimized || _restoreMaximizedAfterMinimize || _restoreFullScreenAfterMinimize) {
+      _handleRestoredFromMinimize();
+    }
+  }
+
+  void _handleRestoredFromMinimize() {
+    final shouldFullScreen = _restoreFullScreenAfterMinimize;
+    final shouldMaximize = _restoreMaximizedAfterMinimize;
+    _isMinimized = false;
+    _restoreFullScreenAfterMinimize = false;
+    _restoreMaximizedAfterMinimize = false;
+
+    if (shouldFullScreen) {
+      unawaited(() async {
+        try {
+          await windowManager.setFullScreen(true);
+          if (mounted) setState(() => _isMaximized = true);
+        } catch (_) {}
+      }());
+      return;
+    }
+
+    if (shouldMaximize) {
+      unawaited(() async {
+        try {
+          if (!await windowManager.isMaximized()) {
+            await windowManager.maximize();
+          }
+          if (mounted) setState(() => _isMaximized = true);
+        } catch (_) {}
+      }());
+      return;
+    }
+
+    unawaited(_refreshMaximized());
   }
 
   Future<void> _refreshMaximized() async {
     if (!Platform.isWindows) return;
     try {
-      final res = await windowManager.isMaximized();
-      if (mounted) setState(() => _isMaximized = res);
+      final isMax = await windowManager.isMaximized();
+      final isFs = await windowManager.isFullScreen();
+      if (mounted) setState(() => _isMaximized = isMax || isFs);
     } catch (_) {}
   }
 
   Future<void> _minimize() async {
     if (!Platform.isWindows) return;
     try {
+      final isFs = await windowManager.isFullScreen();
+      final isMax = await windowManager.isMaximized();
+      _restoreFullScreenAfterMinimize = isFs;
+      _restoreMaximizedAfterMinimize = !isFs && (isMax || _isMaximized);
+      _isMinimized = true;
       await windowManager.minimize();
     } catch (_) {}
   }
@@ -68,7 +144,11 @@ class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> with WindowLi
   Future<void> _toggleMaximize() async {
     if (!Platform.isWindows) return;
     try {
-      if (await windowManager.isMaximized()) {
+      _restoreMaximizedAfterMinimize = false;
+      _restoreFullScreenAfterMinimize = false;
+      if (await windowManager.isFullScreen()) {
+        await windowManager.setFullScreen(false);
+      } else if (await windowManager.isMaximized()) {
         await windowManager.unmaximize();
       } else {
         await windowManager.maximize();

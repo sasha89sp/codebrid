@@ -16,6 +16,7 @@ import '../services/build_bundle_service.dart';
 import '../services/window_size_listener.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
+import '../widgets/project_notes_tab.dart';
 import '../widgets/compact_app_menu.dart';
 import '../widgets/about_backup_dialog.dart';
 import '../widgets/files_to_prompt_dialog.dart';
@@ -316,6 +317,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return Icons.content_paste_go_rounded;
       case 'files':
         return Icons.folder_copy_outlined;
+      case 'notes':
+        return Icons.sticky_note_2_outlined;
       case 'build_capture':
         return Icons.layers_outlined;
       case 'auto_deploy':
@@ -332,6 +335,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return 'Ответ ИИ';
       case 'files':
         return 'Файлы проекта';
+      case 'notes':
+        return 'Заметки';
       case 'build_capture':
         return 'Распаковка сборок';
       case 'auto_deploy':
@@ -348,6 +353,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return const _ImportTab();
       case 'files':
         return const _FilesTab();
+      case 'notes':
+        return const ProjectNotesTab();
       case 'build_capture':
         return const BuildCaptureTab();
       case 'auto_deploy':

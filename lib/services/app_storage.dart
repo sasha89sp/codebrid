@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../models/agent_template_item.dart';
 import '../models/app_settings.dart';
 import '../models/code_project.dart';
+import '../models/project_note.dart';
 import 'agent_template.dart';
 import 'project_naming.dart';
 
@@ -210,6 +211,32 @@ class AppStorage {
     }
     projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return projects;
+  }
+
+  Future<ProjectNotesStore> loadProjectNotes(CodeProject project) async {
+    final file = File(p.join(project.projectDirectory, 'notes.json'));
+    if (!await file.exists()) {
+      return const ProjectNotesStore();
+    }
+    try {
+      final decoded = jsonDecode(await file.readAsString(encoding: utf8));
+      if (decoded is Map<String, dynamic>) {
+        return ProjectNotesStore.fromJson(decoded);
+      }
+    } catch (_) {
+      // Повреждённый файл заметок не мешает открытию проекта.
+    }
+    return const ProjectNotesStore();
+  }
+
+  Future<void> saveProjectNotes(CodeProject project, ProjectNotesStore store) async {
+    await Directory(project.projectDirectory).create(recursive: true);
+    final file = File(p.join(project.projectDirectory, 'notes.json'));
+    await file.writeAsString(
+      '${const JsonEncoder.withIndent('  ').convert(store.toJson())}\n',
+      encoding: utf8,
+      flush: true,
+    );
   }
 
   Future<String> readAgent(CodeProject project) async {

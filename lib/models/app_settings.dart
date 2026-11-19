@@ -8,7 +8,7 @@ class AppSettings {
     this.selectedTemplateId,
     this.downloadsWatchPath,
     this.downloadsWatcherEnabled = false,
-    this.tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
+    this.tabOrder = const <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'],
     this.githubToken = '',
     this.githubOwner = '',
     this.logRetentionDays = 30,
@@ -111,7 +111,7 @@ class AppSettings {
       downloadsWatcherEnabled: json['downloadsWatcherEnabled'] == true,
       tabOrder: (json['tabOrder'] is List)
           ? (json['tabOrder'] as List).map((e) => e.toString()).toList()
-          : const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
+          : const <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'],
       githubToken: json['githubToken']?.toString() ?? '',
       githubOwner: json['githubOwner']?.toString() ?? '',
       logRetentionDays: ((json['logRetentionDays'] as num?)?.toInt() ?? 30).clamp(0, 3650),

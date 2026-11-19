@@ -43,10 +43,14 @@ class WindowSizeListener extends WindowListener {
   Future<void> saveNow() async {
     _saveTimer?.cancel();
     try {
+      final isMinimized = await windowManager.isMinimized();
       final isMaximized = await windowManager.isMaximized();
       final isFullScreen = await windowManager.isFullScreen();
       final size = await windowManager.getSize();
       final current = await storage.loadSettings();
+      if (isMinimized) {
+        return;
+      }
       // Сохраняем нормальные размеры только когда окно не развёрнуто и не в полноэкранном режиме,
       // чтобы при последующем снятии максимизации сохранялся исходный размер окна.
       final saveWidth = (!isMaximized && !isFullScreen)
