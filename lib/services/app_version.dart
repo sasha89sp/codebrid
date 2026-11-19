@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.56';
-  static const int currentBuildNumber = 56;
+  static const String currentVersion = '2.1.57';
+  static const int currentBuildNumber = 57;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.57',
+      buildNumber: 57,
+      title: 'Удалён неиспользуемый импорт dart:convert в build_bundle_service.dart',
+      summary: 'Устранено предупреждение unused_import (dart:convert) в lib/services/build_bundle_service.dart для прохождения flutter analyze.',
+      changes: [
+        'Удалён неиспользуемый импорт dart:convert в lib/services/build_bundle_service.dart',
+        'Обновлена версия до 2.1.57+57 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.56',
       buildNumber: 56,
@@ -97,17 +107,6 @@ class AppVersion {
         'Добавлено поле ввода GitHub Token (_tokenController) с кнопкой показа/скрытия во вкладке BuildCaptureTab',
         'Токен сохраняется в AppSettings при сохранении настроек сборки и перед ручной проверкой сборок на GitHub',
         'Обновлена версия до 2.1.50+50 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.49',
-      buildNumber: 49,
-      title: 'Исправлен ввод текста и клавиатурный фокус в диалогах на Windows',
-      summary: 'Переведён безрамочный заголовок окна на штатный TitleBarStyle.hidden в window_manager без перехвата WM_NCCALCSIZE/WM_NCHITTEST в flutter_window.cpp, восстановив нормальный ввод с клавиатуры в полях диалогов и редакторе шаблонов.',
-      changes: [
-        'Убран низкоуровневый перехват WM_NCCALCSIZE/WM_NCHITTEST в windows/runner/flutter_window.cpp, ломавший клавиатурный фокус в диалогах Windows',
-        'Включён TitleBarStyle.hidden и управление окном через window_manager в MacOsWindowTitleBar',
-        'Улучшено получение фокуса в полях названия и текста в TemplateManagerDialog и обновлена версия до 2.1.49+49',
       ],
     ),
   ];

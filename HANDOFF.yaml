@@ -1,16 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.56: отображение версии скачанной/распакованной сборки и иконка в панели задач"
+current_stage: "Релиз 2.1.57: удалён неиспользуемый импорт dart:convert в build_bundle_service.dart"
 
 completed:
-  - "Добавлено определение версии при скачивании (GitHubBuildFetcherService) и распаковке (BuildBundleService) с выводом в журнал и сводку проверки"
-  - "Встроена иконка IDI_APP_ICON в Runner.rc, win32_window.cpp и windowManager.setIcon для панели задач Windows"
-  - "Обновлена версия до 2.1.56+56 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Удалён неиспользуемый импорт dart:convert в lib/services/build_bundle_service.dart"
+  - "Обновлена версия до 2.1.57+57 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
-  - "Локальный flutter analyze и компиляция C++ на Windows в этом контейнере не запускались"
+  - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить сборку 2.1.56 на GitHub Actions, отображение иконки в панели задач и вывод версии при скачивании/распаковке"
+  - "Проверить прохождение Analyze Dart code и сборку Windows на GitHub Actions"
 
 next_step: >
-  Залить архив 2.1.56 в репозиторий, собрать на GitHub и проверить иконку в панели задач и отображение версии сборки.
+  Залить архив 2.1.57 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
