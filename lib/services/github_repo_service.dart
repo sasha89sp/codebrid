@@ -40,13 +40,14 @@ class GitHubRepoService {
     bool includeReadme = true,
     bool includeGitignore = true,
     bool includeAgentFile = true,
+    bool overwriteExisting = false,
   }) async {
     final dir = Directory(directory);
     await dir.create(recursive: true);
 
     if (includeGitignore) {
       final gitignoreFile = File(p.join(directory, '.gitignore'));
-      if (!await gitignoreFile.exists()) {
+      if (overwriteExisting || !await gitignoreFile.exists()) {
         const content = '# Miscellaneous\n'
             '*.class\n'
             '*.log\n'
@@ -67,7 +68,7 @@ class GitHubRepoService {
 
     if (includeReadme) {
       final readmeFile = File(p.join(directory, 'README.md'));
-      if (!await readmeFile.exists()) {
+      if (overwriteExisting || !await readmeFile.exists()) {
         final descText = description.trim().isEmpty
             ? 'Проект создан в CodeBridge Mini.'
             : description.trim();
@@ -80,7 +81,7 @@ class GitHubRepoService {
 
     if (includeAgentFile && agentContent.trim().isNotEmpty) {
       final agentFile = File(p.join(directory, 'AGENTS.md'));
-      if (!await agentFile.exists()) {
+      if (overwriteExisting || !await agentFile.exists()) {
         await agentFile.writeAsString(
           agentContent.endsWith('\n') ? agentContent : '$agentContent\n',
           encoding: utf8,
@@ -247,6 +248,168 @@ class GitHubRepoService {
         errorMessage: msg,
       );
     }
+  }
+
+  static Future<GitHubRepoProvisionResult> attachExistingRepository({
+    required String repoUrl,
+    required String branch,
+    required String localDirectory,
+    bool cloneIfEmpty = true,
+  }) async {
+    final logs = <String>[];
+    final cleanUrl = repoUrl.trim();
+    final cleanBranch = branch.trim().isEmpty ? 'main' : branch.trim();
+    final cleanDir = p.normalize(localDirectory.trim());
+
+    if (cleanUrl.isEmpty) {
+      const msg = 'Укажите URL готового Git-репозитория.';
+      logs.add(msg);
+      return const GitHubRepoProvisionResult(
+        success: false,
+        logs: <String>[msg],
+        errorMessage: msg,
+      );
+    }
+
+    final statusCheck = await GitService.run(<String>['--version']);
+    if (!statusCheck.isSuccess) {
+      const msg = 'Git не найден в PATH. Установите Git for Windows.';
+      logs.add(msg);
+      return const GitHubRepoProvisionResult(
+        success: false,
+        logs: <String>[msg],
+        errorMessage: msg,
+      );
+    }
+
+    final targetDir = Directory(cleanDir);
+    final dirExists = await targetDir.exists();
+    var isEmptyOrMissing = !dirExists;
+    if (dirExists) {
+      final entries = await targetDir.list(followLinks: false).toList();
+      isEmptyOrMissing = entries.isEmpty;
+    }
+
+    final htmlUrl = cleanUrl.endsWith('.git')
+        ? cleanUrl.substring(0, cleanUrl.length - 4)
+        : cleanUrl;
+
+    if (isEmptyOrMissing && cloneIfEmpty) {
+      logs.add('Локальная папка пуста или отсутствует — выполняется git clone ($cleanUrl)...');
+      await targetDir.parent.create(recursive: true);
+      if (dirExists) {
+        try {
+          await targetDir.delete(recursive: true);
+        } catch (_) {}
+      }
+      final cloneArgs = <String>[
+        'clone',
+        '--branch',
+        cleanBranch,
+        cleanUrl,
+        cleanDir,
+      ];
+      var cloneRes = await GitService.run(cloneArgs);
+      if (!cloneRes.isSuccess) {
+        logs.add('Клонирование ветки "$cleanBranch" не удалось — пробуем стандартный git clone...');
+        cloneRes = await GitService.run(<String>['clone', cleanUrl, cleanDir]);
+      }
+      if (cloneRes.combinedOutput.isNotEmpty) {
+        logs.add(cloneRes.combinedOutput);
+      }
+      if (!cloneRes.isSuccess) {
+        final msg = cloneRes.combinedOutput.isEmpty
+            ? 'Не удалось склонировать репозиторий $cleanUrl.'
+            : cloneRes.combinedOutput;
+        return GitHubRepoProvisionResult(
+          success: false,
+          logs: logs,
+          remoteUrl: cleanUrl,
+          htmlUrl: htmlUrl,
+          errorMessage: msg,
+        );
+      }
+
+      await targetDir.create(recursive: true);
+      final inspected = await GitService.inspectDirectory(cleanDir);
+      logs.add('Репозиторий склонирован в $cleanDir (ветка: ${inspected.branch ?? cleanBranch}).');
+      return GitHubRepoProvisionResult(
+        success: true,
+        logs: logs,
+        remoteUrl: cleanUrl,
+        htmlUrl: htmlUrl,
+      );
+    }
+
+    await targetDir.create(recursive: true);
+    final gitDir = Directory(p.join(cleanDir, '.git'));
+    if (!await gitDir.exists()) {
+      logs.add('Инициализация локального Git-репозитория в существующей папке $cleanDir...');
+      final initRes = await GitService.run(<String>['init'], workingDirectory: cleanDir);
+      if (!initRes.isSuccess) {
+        logs.add(initRes.combinedOutput);
+        return GitHubRepoProvisionResult(
+          success: false,
+          logs: logs,
+          errorMessage: 'Не удалось выполнить git init.',
+          errorCode: null,
+        );
+      }
+      await GitService.run(<String>['branch', '-M', cleanBranch], workingDirectory: cleanDir);
+    }
+
+    final currentRemote = await GitService.run(
+      <String>['remote', 'get-url', 'origin'],
+      workingDirectory: cleanDir,
+    );
+    if (!currentRemote.isSuccess) {
+      final addRes = await GitService.run(
+        <String>['remote', 'add', 'origin', cleanUrl],
+        workingDirectory: cleanDir,
+      );
+      if (!addRes.isSuccess) {
+        logs.add(addRes.combinedOutput);
+        return GitHubRepoProvisionResult(
+          success: false,
+          logs: logs,
+          errorMessage: 'Не удалось привязать remote origin.',
+        );
+      }
+      logs.add('Привязан remote origin: $cleanUrl');
+    } else if (currentRemote.stdout.trim() != cleanUrl) {
+      final setRes = await GitService.run(
+        <String>['remote', 'set-url', 'origin', cleanUrl],
+        workingDirectory: cleanDir,
+      );
+      if (!setRes.isSuccess) {
+        logs.add(setRes.combinedOutput);
+        return GitHubRepoProvisionResult(
+          success: false,
+          logs: logs,
+          errorMessage: 'Не удалось обновить remote origin.',
+        );
+      }
+      logs.add('Обновлён remote origin: $cleanUrl');
+    } else {
+      logs.add('Remote origin уже настроен на $cleanUrl');
+    }
+
+    final statusRes = await GitService.run(<String>['status', '--short'], workingDirectory: cleanDir);
+    if (statusRes.isSuccess) {
+      final trimmedStatus = statusRes.stdout.trim();
+      logs.add(
+        trimmedStatus.isEmpty
+            ? 'Статус Git: рабочее дерево чистое.'
+            : 'Статус Git (изменённые/новые файлы):\n$trimmedStatus',
+      );
+    }
+
+    return GitHubRepoProvisionResult(
+      success: true,
+      logs: logs,
+      remoteUrl: cleanUrl,
+      htmlUrl: htmlUrl,
+    );
   }
 
   static Future<GitHubRepoProvisionResult> _configureLocalAndMaybePush({

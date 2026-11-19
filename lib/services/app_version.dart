@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.24';
-  static const int currentBuildNumber = 24;
+  static const String currentVersion = '2.1.25';
+  static const int currentBuildNumber = 25;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.25',
+      buildNumber: 25,
+      title: 'Режим подключения готового репозитория при создании проекта',
+      summary: 'В диалоге создания проекта добавлен выбор между созданием нового проекта с нуля и подключением готового репозитория по URL.',
+      changes: [
+        'Добавлен метод GitHubRepoService.attachExistingRepository: git clone при пустой/отсутствующей папке или привязка origin и проверка статуса Git в существующей папке',
+        'Добавлена защита от перезаписи существующих README.md, .gitignore и AGENTS.md без явного разрешения и автозаполнение авто-деплоя',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.24',
       buildNumber: 24,

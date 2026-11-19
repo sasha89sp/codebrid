@@ -241,6 +241,10 @@ class ProjectProvider extends ChangeNotifier {
     required String description,
     required String outputPath,
     String? templateId,
+    bool attachExistingRepo = false,
+    String existingRepoUrl = '',
+    bool cloneIfEmpty = true,
+    bool overwriteExistingStarterFiles = false,
     bool createRemoteRepo = false,
     bool privateRepo = true,
     String? repoName,
@@ -286,26 +290,67 @@ class ProjectProvider extends ChangeNotifier {
         description: project.description,
       );
 
-      if (createStarterFiles) {
-        await GitHubRepoService.scaffoldStarterFiles(
-          directory: project.outputPath,
-          projectName: project.name,
-          packageName: project.packageName,
-          description: project.description,
-          agentContent: renderedAgent,
-          includeReadme: includeReadme,
-          includeGitignore: includeGitignore,
-          includeAgentFile: includeAgentFile,
-        );
-      }
-
       final cleanBranch = gitBranch.trim().isEmpty ? 'main' : gitBranch.trim();
       final defaultFilter = (zipNameFilterOverride != null && zipNameFilterOverride.trim().isNotEmpty)
           ? zipNameFilterOverride.trim()
           : cleanName.replaceAll(RegExp(r'\s+'), '');
 
       String summarySuffix = '';
-      if (createRemoteRepo) {
+      if (attachExistingRepo) {
+        final attached = await GitHubRepoService.attachExistingRepository(
+          repoUrl: existingRepoUrl,
+          branch: cleanBranch,
+          localDirectory: project.outputPath,
+          cloneIfEmpty: cloneIfEmpty,
+        );
+        for (final line in attached.logs) {
+          _appendDeployLog(line);
+        }
+        if (!attached.success) {
+          throw StateError(
+            attached.errorMessage ?? 'Не удалось подключить готовый репозиторий.',
+          );
+        }
+        if (createStarterFiles) {
+          await GitHubRepoService.scaffoldStarterFiles(
+            directory: project.outputPath,
+            projectName: project.name,
+            packageName: project.packageName,
+            description: project.description,
+            agentContent: renderedAgent,
+            includeReadme: includeReadme,
+            includeGitignore: includeGitignore,
+            includeAgentFile: includeAgentFile,
+            overwriteExisting: overwriteExistingStarterFiles,
+          );
+        }
+        final updatedProj = project.copyWith(
+          gitRepoUrl: attached.remoteUrl ?? existingRepoUrl.trim(),
+          gitBranch: cleanBranch,
+          autoDeployEnabled: autoEnableDeploy,
+          zipNameFilter: defaultFilter,
+          autoSyncOnReject: autoSyncOnReject,
+        );
+        await storage.updateProject(updatedProj);
+        project = updatedProj;
+        summarySuffix = ' Подключён готовый репозиторий: ${project.gitRepoUrl} (ветка: $cleanBranch).';
+      } else {
+        if (createStarterFiles) {
+          await GitHubRepoService.scaffoldStarterFiles(
+            directory: project.outputPath,
+            projectName: project.name,
+            packageName: project.packageName,
+            description: project.description,
+            agentContent: renderedAgent,
+            includeReadme: includeReadme,
+            includeGitignore: includeGitignore,
+            includeAgentFile: includeAgentFile,
+            overwriteExisting: overwriteExistingStarterFiles,
+          );
+        }
+      }
+
+      if (!attachExistingRepo && createRemoteRepo) {
         final effectiveToken = (githubTokenOverride ?? '').trim().isNotEmpty
             ? githubTokenOverride!.trim()
             : githubToken;
