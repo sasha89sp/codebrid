@@ -41,12 +41,13 @@ Future<void> main(List<String> args) async {
   final settings = await storage.loadSettings();
 
   await windowManager.ensureInitialized();
-  final trayService = AppTrayService();
+  final trayService = AppTrayService()..windowSizeListener = windowSizeListener;
   await trayService.initialize(p.join(storage.applicationDirectory, 'tray.ico'));
 
-  final windowCloseListener = AppWindowCloseListener(trayService);
+  final windowSizeListener = WindowSizeListener(storage);
+  final windowCloseListener = AppWindowCloseListener(trayService, windowSizeListener: windowSizeListener);
   windowManager.addListener(windowCloseListener);
-  windowManager.addListener(WindowSizeListener(storage));
+  windowManager.addListener(windowSizeListener);
   await windowManager.setPreventClose(trayService.isAvailable);
 
   final windowOptions = WindowOptions(
@@ -64,6 +65,11 @@ Future<void> main(List<String> args) async {
 
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
+    if (settings.windowIsFullScreen) {
+      await windowManager.setFullScreen(true);
+    } else if (settings.windowIsMaximized) {
+      await windowManager.maximize();
+    }
     await windowManager.focus();
   });
 

@@ -3,6 +3,8 @@ class AppSettings {
     this.lastProjectId,
     this.windowWidth,
     this.windowHeight,
+    this.windowIsMaximized = false,
+    this.windowIsFullScreen = false,
     this.selectedTemplateId,
     this.downloadsWatchPath,
     this.downloadsWatcherEnabled = false,
@@ -18,6 +20,8 @@ class AppSettings {
   final String? lastProjectId;
   final double? windowWidth;
   final double? windowHeight;
+  final bool windowIsMaximized;
+  final bool windowIsFullScreen;
   final String? selectedTemplateId;
   final String? downloadsWatchPath;
   final bool downloadsWatcherEnabled;
@@ -33,6 +37,8 @@ class AppSettings {
     String? lastProjectId,
     double? windowWidth,
     double? windowHeight,
+    bool? windowIsMaximized,
+    bool? windowIsFullScreen,
     String? selectedTemplateId,
     String? downloadsWatchPath,
     bool? downloadsWatcherEnabled,
@@ -49,6 +55,8 @@ class AppSettings {
       lastProjectId: clearLastProject ? null : (lastProjectId ?? this.lastProjectId),
       windowWidth: windowWidth ?? this.windowWidth,
       windowHeight: windowHeight ?? this.windowHeight,
+      windowIsMaximized: windowIsMaximized ?? this.windowIsMaximized,
+      windowIsFullScreen: windowIsFullScreen ?? this.windowIsFullScreen,
       selectedTemplateId: selectedTemplateId ?? this.selectedTemplateId,
       downloadsWatchPath: downloadsWatchPath ?? this.downloadsWatchPath,
       downloadsWatcherEnabled: downloadsWatcherEnabled ?? this.downloadsWatcherEnabled,
@@ -66,6 +74,8 @@ class AppSettings {
         'lastProjectId': lastProjectId,
         'windowWidth': windowWidth,
         'windowHeight': windowHeight,
+        'windowIsMaximized': windowIsMaximized,
+        'windowIsFullScreen': windowIsFullScreen,
         'selectedTemplateId': selectedTemplateId,
         'downloadsWatchPath': downloadsWatchPath,
         'downloadsWatcherEnabled': downloadsWatcherEnabled,
@@ -83,6 +93,8 @@ class AppSettings {
       lastProjectId: json['lastProjectId'] as String?,
       windowWidth: (json['windowWidth'] as num?)?.toDouble(),
       windowHeight: (json['windowHeight'] as num?)?.toDouble(),
+      windowIsMaximized: json['windowIsMaximized'] == true,
+      windowIsFullScreen: json['windowIsFullScreen'] == true,
       selectedTemplateId: json['selectedTemplateId'] as String?,
       downloadsWatchPath: json['downloadsWatchPath'] as String?,
       downloadsWatcherEnabled: json['downloadsWatcherEnabled'] == true,

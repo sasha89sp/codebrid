@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'window_size_listener.dart';
+
 class AppTrayService with TrayListener {
   bool isAvailable = false;
 
@@ -63,8 +65,11 @@ class AppTrayService with TrayListener {
     }
   }
 
+  WindowSizeListener? windowSizeListener;
+
   Future<void> exitApplication() async {
     try {
+      await windowSizeListener?.saveNow();
       trayManager.removeListener(this);
       await trayManager.destroy();
     } catch (_) {
@@ -75,12 +80,14 @@ class AppTrayService with TrayListener {
 }
 
 class AppWindowCloseListener extends WindowListener {
-  AppWindowCloseListener(this.trayService);
+  AppWindowCloseListener(this.trayService, {this.windowSizeListener});
 
   final AppTrayService trayService;
+  final WindowSizeListener? windowSizeListener;
 
   @override
   void onWindowClose() async {
+    await windowSizeListener?.saveNow();
     if (trayService.isAvailable) {
       await windowManager.hide();
     } else {

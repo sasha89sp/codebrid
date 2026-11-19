@@ -20,15 +20,56 @@ class WindowSizeListener extends WindowListener {
     _scheduleSave(const Duration(milliseconds: 80));
   }
 
-  void _scheduleSave([Duration delay = const Duration(milliseconds: 700)]) {
+  @override
+  void onWindowMaximize() {
+    _scheduleSave(const Duration(milliseconds: 50));
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    _scheduleSave(const Duration(milliseconds: 80));
+  }
+
+  @override
+  void onWindowEnterFullScreen() {
+    _scheduleSave(const Duration(milliseconds: 50));
+  }
+
+  @override
+  void onWindowLeaveFullScreen() {
+    _scheduleSave(const Duration(milliseconds: 80));
+  }
+
+  Future<void> saveNow() async {
     _saveTimer?.cancel();
-    _saveTimer = Timer(delay, () async {
-      try {
-        final size = await windowManager.getSize();
-        await storage.writeWindowSize(size.width, size.height);
-      } catch (_) {
-        // Сбой сохранения размеров окна не влияет на работу программы.
-      }
+    try {
+      final isMaximized = await windowManager.isMaximized();
+      final isFullScreen = await windowManager.isFullScreen();
+      final size = await windowManager.getSize();
+      final current = await storage.loadSettings();
+      // Сохраняем нормальные размеры только когда окно не развёрнуто и не в полноэкранном режиме,
+      // чтобы при последующем снятии максимизации сохранялся исходный размер окна.
+      final saveWidth = (!isMaximized && !isFullScreen)
+          ? size.width
+          : (current.windowWidth ?? size.width);
+      final saveHeight = (!isMaximized && !isFullScreen)
+          ? size.height
+          : (current.windowHeight ?? size.height);
+      await storage.writeWindowState(
+        width: saveWidth,
+        height: saveHeight,
+        isMaximized: isMaximized,
+        isFullScreen: isFullScreen,
+      );
+    } catch (_) {
+      // Сбой сохранения состояния окна не влияет на работу программы.
+    }
+  }
+
+  void _scheduleSave([Duration delay = const Duration(milliseconds: 500)]) {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(delay, () {
+      unawaited(saveNow());
     });
   }
 

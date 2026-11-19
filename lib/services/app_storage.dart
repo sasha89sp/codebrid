@@ -302,6 +302,21 @@ class AppStorage {
     await saveSettings(current.copyWith(windowWidth: width, windowHeight: height));
   }
 
+  Future<void> writeWindowState({
+    required double width,
+    required double height,
+    required bool isMaximized,
+    required bool isFullScreen,
+  }) async {
+    final current = await loadSettings();
+    await saveSettings(current.copyWith(
+      windowWidth: width,
+      windowHeight: height,
+      windowIsMaximized: isMaximized,
+      windowIsFullScreen: isFullScreen,
+    ));
+  }
+
   Future<void> saveLastProject(String? projectId) async {
     final current = await loadSettings();
     await saveSettings(current.copyWith(

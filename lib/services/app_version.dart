@@ -17,11 +17,31 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.28';
-  static const int currentBuildNumber = 28;
+  static const String currentVersion = '2.1.30';
+  static const int currentBuildNumber = 30;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.30',
+      buildNumber: 30,
+      title: 'Тёмное каскадное меню в стиле референса с настройками программы',
+      summary: 'Добавлено тёмное компактное меню с подменю (Файл, Деплой и сборки, Бэкап и настройки, Окно), быстрыми действиями и настройками/выходом.',
+      changes: [
+        'Создан виджет CompactAppMenuButton (lib/widgets/compact_app_menu.dart) в тёмном стиле с подменю и горячими клавишами',
+        'Подключены все настройки мониторинга «Загрузок», автосборок GitHub, бэкапа/автобэкапа, вкладок и папок проекта',
+      ],
+    ),
+    ReleaseEntry(
+      version: '2.1.29',
+      buildNumber: 29,
+      title: 'Сохранение и восстановление состояния окна (развёрнутое / полный экран / размер)',
+      summary: 'При закрытии и выходе из приложения запоминается состояние окна (развёрнуто на весь экран, полноэкранный режим и размер) и восстанавливается при следующем запуске.',
+      changes: [
+        'Добавлены windowIsMaximized и windowIsFullScreen в AppSettings и метод writeWindowState в AppStorage',
+        'Обновлены WindowSizeListener, AppTrayService и main.dart для сохранения состояния окна при изменении/закрытии и его восстановления при запуске',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.28',
       buildNumber: 28,

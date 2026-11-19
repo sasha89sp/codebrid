@@ -17,6 +17,7 @@ import '../services/build_bundle_service.dart';
 import '../services/files_to_prompt.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
+import '../widgets/compact_app_menu.dart';
 import '../widgets/section_header.dart';
 
 Future<void> _openFolder(BuildContext context, String folderPath) async {
@@ -81,6 +82,20 @@ class HomeScreen extends StatelessWidget {
                 tooltip: 'Папка программы',
                 onPressed: () => _openFolder(context, provider.storage.applicationDirectory),
                 icon: const Icon(Icons.folder_open_outlined),
+              ),
+              const SizedBox(width: 10),
+              CompactAppMenuButton(
+                provider: provider,
+                onNewProject: () => _showCreateProjectDialog(context, provider),
+                onFilesToPrompt: () => _showFilesToPromptDialog(context),
+                onAbout: () => _showAboutDialog(context, provider),
+                onOpenFolder: (folder) => _openFolder(context, folder),
+                onSelectTab: (tabId) {
+                  final idx = provider.tabOrder.indexOf(tabId);
+                  if (idx >= 0) {
+                    provider.setSelectedTabIndex(idx);
+                  }
+                },
               ),
               const SizedBox(width: 10),
             ],
