@@ -11,12 +11,14 @@ class FetchedBuildItem {
     required this.zipPath,
     required this.fileName,
     required this.sourceLabel,
+    this.detectedVersion,
   });
 
   final String sourceId;
   final String zipPath;
   final String fileName;
   final String sourceLabel;
+  final String? detectedVersion;
 }
 
 class GitHubBuildFetchResult {
@@ -57,6 +59,50 @@ class GitHubBuildFetcherService {
         }
       }
     }
+    return null;
+  }
+
+  static String? detectVersionFromArchiveBytes(List<int> zipBytes, {String? fallbackText}) {
+    try {
+      final archive = ZipDecoder().decodeBytes(zipBytes, verify: false);
+      for (final entry in archive) {
+        if (!entry.isFile) continue;
+        final lower = entry.name.replaceAll('\\', '/').toLowerCase();
+        if (lower.endsWith('pubspec.yaml') ||
+            lower.endsWith('app_version.dart') ||
+            lower.endsWith('version.txt') ||
+            lower.endsWith('version.json')) {
+          final text = utf8.decode(entry.content as List<int>, allowMalformed: true);
+          final found = extractVersionFromText(text);
+          if (found != null) return found;
+        }
+      }
+      for (final entry in archive) {
+        if (!entry.isFile) continue;
+        final found = extractVersionFromText(entry.name);
+        if (found != null) return found;
+      }
+    } catch (_) {}
+    if (fallbackText != null) {
+      return extractVersionFromText(fallbackText);
+    }
+    return null;
+  }
+
+  static String? extractVersionFromText(String text) {
+    final pubspecMatch = RegExp(r'''version\s*:\s*['"]?(\d+\.\d+\.\d+(?:\+\d+)?)['"]?''').firstMatch(text);
+    if (pubspecMatch != null) return pubspecMatch.group(1);
+
+    final dartVerMatch = RegExp(r'''currentVersion\s*=\s*['"](\d+\.\d+\.\d+)['"]''').firstMatch(text);
+    final dartBuildMatch = RegExp(r'''currentBuildNumber\s*=\\s*(\d+)''').firstMatch(text);
+    if (dartVerMatch != null) {
+      final ver = dartVerMatch.group(1)!;
+      final b = dartBuildMatch?.group(1);
+      return b != null ? '$ver+$b' : ver;
+    }
+
+    final semverMatch = RegExp(r'(?:^|[^0-9.])(\d+\.\d+\.\d+(?:\+\d+)?)(?:[^0-9.]|$)').firstMatch(text);
+    if (semverMatch != null) return semverMatch.group(1);
     return null;
   }
 
@@ -190,16 +236,24 @@ class GitHubBuildFetcherService {
                 if (lowerName.endsWith('.zip') && matchesFilter(p.basename(entry.name))) {
                   final safeZipName = p.basename(entry.name);
                   final outZipPath = p.join(outDir.path, safeZipName);
-                  await File(outZipPath).writeAsBytes(entry.content as List<int>, flush: true);
+                  final innerBytes = entry.content as List<int>;
+                  await File(outZipPath).writeAsBytes(innerBytes, flush: true);
+                  final runTitle = (bestRun['display_title'] as String? ?? bestRun['head_commit']?['message'] as String? ?? '').trim();
+                  final detectedVer = detectVersionFromArchiveBytes(
+                    innerBytes,
+                    fallbackText: '$safeZipName $artName $runTitle',
+                  );
+                  final verSuffix = detectedVer != null ? ' (версия $detectedVer)' : '';
                   fetched.add(
                     FetchedBuildItem(
                       sourceId: runSourceId,
                       zipPath: outZipPath,
                       fileName: safeZipName,
                       sourceLabel: 'GitHub Actions run #$runId ($artName)',
+                      detectedVersion: detectedVer,
                     ),
                   );
-                  logs.add('Скачан архив сборки из артефакта: $outZipPath');
+                  logs.add('Скачан архив сборки из артефакта$verSuffix: $outZipPath');
                   extractedInner++;
                 }
               }
@@ -208,15 +262,22 @@ class GitHubBuildFetcherService {
                 final safeName = '${artName}_run_$runId.zip';
                 final outZipPath = p.join(outDir.path, safeName);
                 await File(outZipPath).writeAsBytes(zipBytes, flush: true);
+                final runTitle = (bestRun['display_title'] as String? ?? bestRun['head_commit']?['message'] as String? ?? '').trim();
+                final detectedVer = detectVersionFromArchiveBytes(
+                  zipBytes,
+                  fallbackText: '$artName $runTitle',
+                );
+                final verSuffix = detectedVer != null ? ' (версия $detectedVer)' : '';
                 fetched.add(
                   FetchedBuildItem(
                     sourceId: runSourceId,
                     zipPath: outZipPath,
                     fileName: safeName,
                     sourceLabel: 'GitHub Actions run #$runId ($artName)',
+                    detectedVersion: detectedVer,
                   ),
                 );
-                logs.add('Сохранён артефакт сборки: $outZipPath');
+                logs.add('Сохранён артефакт сборки$verSuffix: $outZipPath');
               }
             }
             if (fetched.isNotEmpty) break;
@@ -245,15 +306,21 @@ class GitHubBuildFetcherService {
                   if (bytes == null || bytes.isEmpty) continue;
                   final outZipPath = p.join(outDir.path, name);
                   await File(outZipPath).writeAsBytes(bytes, flush: true);
+                  final detectedVer = detectVersionFromArchiveBytes(
+                    bytes,
+                    fallbackText: '$tag $name',
+                  ) ?? tag.replaceFirst(RegExp(r'^[vV]'), '');
+                  final verSuffix = detectedVer.isNotEmpty ? ' (версия $detectedVer)' : '';
                   fetched.add(
                     FetchedBuildItem(
                       sourceId: relSourceId,
                       zipPath: outZipPath,
                       fileName: name,
                       sourceLabel: 'GitHub Release $tag',
+                      detectedVersion: detectedVer.isNotEmpty ? detectedVer : null,
                     ),
                   );
-                  logs.add('Скачан релизный ZIP с GitHub ($tag): $outZipPath');
+                  logs.add('Скачан релизный ZIP с GitHub$verSuffix: $outZipPath');
                 }
               }
             }

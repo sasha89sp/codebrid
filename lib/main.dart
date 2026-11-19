@@ -64,6 +64,20 @@ Future<void> main(List<String> args) async {
   );
 
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    if (Platform.isWindows) {
+      final iconCandidates = <String>[
+        p.join(storage.applicationDirectory, 'tray.ico'),
+        p.join(Directory.current.path, 'assets', 'tray.ico'),
+      ];
+      for (final candidate in iconCandidates) {
+        if (File(candidate).existsSync()) {
+          try {
+            await windowManager.setIcon(candidate);
+          } catch (_) {}
+          break;
+        }
+      }
+    }
     await windowManager.show();
     if (settings.windowIsFullScreen) {
       await windowManager.setFullScreen(true);

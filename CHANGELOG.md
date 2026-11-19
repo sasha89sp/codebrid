@@ -1,5 +1,9 @@
 # История изменений CodeBridge Mini
 
+## 2.1.56+56
+- При проверке, скачивании и распаковке сборок с GitHub теперь распознаётся и отображается версия скачанной и распакованной сборки в строке «Последняя проверка GitHub» и журнале.
+- Встроена иконка `IDI_APP_ICON` в ресурсы исполняемого файла (`Runner.rc`), окно Win32 (`WM_SETICON`) и `windowManager.setIcon` для отображения значка приложения в панели задач Windows.
+
 ## 2.1.55+55
 - Исправлены ошибки `flutter analyze` в `lib/models/app_settings.dart`: добавлены инициализация `this.logRetentionDays = 30` в конструктор `AppSettings`, именованный параметр `logRetentionDays` в `copyWith` и сериализация в `toJson`/`fromJson`.
 

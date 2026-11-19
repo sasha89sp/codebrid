@@ -715,8 +715,15 @@ class ProjectProvider extends ChangeNotifier {
       final nowStamp = DateTime.now();
       String two(int n) => n.toString().padLeft(2, '0');
       lastBuildAutoCheckAt = '${two(nowStamp.hour)}:${two(nowStamp.minute)}:${two(nowStamp.second)}';
+      final versions = res.fetchedZips
+          .map((e) => e.detectedVersion)
+          .whereType<String>()
+          .where((v) => v.trim().isNotEmpty)
+          .toSet()
+          .toList();
+      final verLabel = versions.isNotEmpty ? ' — версия ${versions.join(', ')}' : '';
       lastBuildAutoCheckSummary = res.fetchedZips.isNotEmpty
-          ? 'Скачано сборок: ${res.fetchedZips.length}'
+          ? 'Скачано и распаковано сборок: ${res.fetchedZips.length}$verLabel'
           : (res.success ? 'Новых сборок нет' : (res.errorMessage ?? 'Ошибка проверки'));
       for (final line in res.logs) {
         _appendUnpackLog(line);

@@ -1,15 +1,16 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.55: исправлен конструктор и copyWith в AppSettings для logRetentionDays"
+current_stage: "Релиз 2.1.56: отображение версии скачанной/распакованной сборки и иконка в панели задач"
 
 completed:
-  - "Добавлены this.logRetentionDays = 30 в конструктор AppSettings, параметр logRetentionDays в copyWith и сериализация JSON"
-  - "Обновлена версия до 2.1.55+55 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлено определение версии при скачивании (GitHubBuildFetcherService) и распаковке (BuildBundleService) с выводом в журнал и сводку проверки"
+  - "Встроена иконка IDI_APP_ICON в Runner.rc, win32_window.cpp и windowManager.setIcon для панели задач Windows"
+  - "Обновлена версия до 2.1.56+56 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
-  - "Локальный flutter analyze в этом контейнере не запускался"
+  - "Локальный flutter analyze и компиляция C++ на Windows в этом контейнере не запускались"
 
 pending:
-  - "Проверить прохождение Validate main branch / Analyze Dart code на GitHub Actions"
+  - "Проверить сборку 2.1.56 на GitHub Actions, отображение иконки в панели задач и вывод версии при скачивании/распаковке"
 
 next_step: >
-  Залить архив 2.1.55 в репозиторий и проверить прохождение Analyze Dart code и сборки Windows.
+  Залить архив 2.1.56 в репозиторий, собрать на GitHub и проверить иконку в панели задач и отображение версии сборки.

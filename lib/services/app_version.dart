@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.55';
-  static const int currentBuildNumber = 55;
+  static const String currentVersion = '2.1.56';
+  static const int currentBuildNumber = 56;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.56',
+      buildNumber: 56,
+      title: 'Отображение скачанной/распакованной версии и иконка приложения в панели задач Windows',
+      summary: 'При скачивании и распаковке сборки определяется и отображается её версия в статусе и журнале, а в исполняемый файл и окно Windows встроена иконка приложения для панели задач.',
+      changes: [
+        'Добавлено определение версии скачанной и распакованной сборки и её вывод в сводке «Последняя проверка GitHub» и журнале распаковки',
+        'Встроена иконка IDI_APP_ICON в Runner.rc, win32_window.cpp (WM_SETICON) и windowManager.setIcon для отображения значка в панели задач Windows',
+        'Обновлена версия до 2.1.56+56 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.55',
       buildNumber: 55,
@@ -97,17 +108,6 @@ class AppVersion {
         'Убран низкоуровневый перехват WM_NCCALCSIZE/WM_NCHITTEST в windows/runner/flutter_window.cpp, ломавший клавиатурный фокус в диалогах Windows',
         'Включён TitleBarStyle.hidden и управление окном через window_manager в MacOsWindowTitleBar',
         'Улучшено получение фокуса в полях названия и текста в TemplateManagerDialog и обновлена версия до 2.1.49+49',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.48',
-      buildNumber: 48,
-      title: 'Кнопки окна перенесены вправо в порядке Windows',
-      summary: 'В MacOsWindowTitleBar кнопки управления окном перенесены в правый угол и расположены слева направо в порядке Windows: свернуть, развернуть/восстановить, закрыть.',
-      changes: [
-        'Перенесён блок кнопок управления окном в правую часть MacOsWindowTitleBar',
-        'Установлен порядок кнопок как на Windows: жёлтая (свернуть), зелёная (развернуть/восстановить), красная (закрыть)',
-        'Обновлена версия до 2.1.48+48 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

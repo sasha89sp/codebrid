@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
@@ -11,6 +12,7 @@ class BuildBundleResult {
     this.targetDirectory,
     this.backupDirectory,
     this.launchedExePath,
+    this.detectedVersion,
   });
 
   final bool success;
@@ -19,6 +21,7 @@ class BuildBundleResult {
   final String? targetDirectory;
   final String? backupDirectory;
   final String? launchedExePath;
+  final String? detectedVersion;
 }
 
 class BuildBundleService {

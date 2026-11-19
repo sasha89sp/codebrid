@@ -1,5 +1,7 @@
 #include "win32_window.h"
 
+#include "resource.h"
+
 #include <algorithm>
 
 Win32Window::Win32Window() = default;
@@ -22,6 +24,14 @@ bool Win32Window::Create(const std::wstring& title, const Point& origin,
       nullptr, nullptr, ::GetModuleHandle(nullptr), this);
 
   if (!window_handle_) return false;
+  HICON big_icon = static_cast<HICON>(::LoadImageW(
+      ::GetModuleHandle(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON,
+      ::GetSystemMetrics(SM_CXICON), ::GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR));
+  HICON small_icon = static_cast<HICON>(::LoadImageW(
+      ::GetModuleHandle(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON,
+      ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR));
+  if (big_icon) ::SendMessageW(window_handle_, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(big_icon));
+  if (small_icon) ::SendMessageW(window_handle_, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(small_icon));
   if (!OnCreate()) return false;
   ::ShowWindow(window_handle_, SW_SHOWNORMAL);
   ::UpdateWindow(window_handle_);
@@ -62,7 +72,11 @@ bool Win32Window::RegisterWindowClass() {
   window_class.lpszClassName = kWindowClassName;
   window_class.style = CS_HREDRAW | CS_VREDRAW;
   window_class.lpfnWndProc = Win32Window::WndProc;
-  window_class.hInstance = ::GetModuleHandle(nullptr);
+  HINSTANCE hinst = ::GetModuleHandle(nullptr);
+  window_class.hInstance = hinst;
+  window_class.hIcon = static_cast<HICON>(::LoadImageW(
+      hinst, MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON,
+      ::GetSystemMetrics(SM_CXICON), ::GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR));
   return ::RegisterClassW(&window_class) != 0 || ::GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
 }
 
