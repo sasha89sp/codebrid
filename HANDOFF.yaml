@@ -1,16 +1,16 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.42: исправлено создание и редактирование новых шаблонов в библиотеке"
+current_stage: "Релиз 2.1.43: исправлена ручная проверка и скачивание сборок с GitHub"
 
 completed:
-  - "Вынесен TemplateManagerDialog в lib/widgets/template_manager_dialog.dart"
-  - "Исправлено редактирование названия и текста нового шаблона, выделение текста и сохранение"
-  - "Обновлена версия до 2.1.42+42 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлен forceRecheck при ручном нажатии «Проверить и скачать с GitHub» в ProjectProvider"
+  - "Улучшен перебор успешных workflow runs и диагностика причин в GitHubBuildFetcherService"
+  - "Обновлена версия до 2.1.43+43 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions и создание/редактирование нового шаблона в приложении"
+  - "Проверить Build portable Windows x64 на GitHub Actions и кнопку «Проверить и скачать с GitHub» в приложении"
 
 next_step: >
-  Залить архив 2.1.42 в репозиторий и проверить сборку Windows на GitHub.
+  Залить архив 2.1.43 в репозиторий и проверить сборку Windows на GitHub.

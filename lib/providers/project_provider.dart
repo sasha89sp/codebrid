@@ -647,6 +647,8 @@ class ProjectProvider extends ChangeNotifier {
   Future<GitHubBuildFetchResult> checkAndApplyGitHubBuilds({bool silent = false}) async {
     final proj = currentProject;
     if (proj == null) {
+      if (!silent) errorMessage = 'Нет выбранного проекта.';
+      notifyListeners();
       return const GitHubBuildFetchResult(
         success: false,
         logs: <String>['Нет выбранного проекта.'],
@@ -662,6 +664,7 @@ class ProjectProvider extends ChangeNotifier {
       );
     }
     isCheckingGitHubBuilds = true;
+    if (!silent) errorMessage = null;
     notifyListeners();
     try {
       final fetchDir = p.join(storage.dataDirectory, 'builds', '_fetched', proj.packageName);
@@ -672,6 +675,7 @@ class ProjectProvider extends ChangeNotifier {
         lastProcessedId: _lastFetchedBuildSourceByProject[proj.id],
         zipFilter: proj.buildZipFilter,
         takeAllBuilds: proj.buildTakeAllPublicBuilds,
+        forceRecheck: !silent,
       );
       for (final line in res.logs) {
         _appendDeployLog(line);

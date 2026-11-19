@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.42';
-  static const int currentBuildNumber = 42;
+  static const String currentVersion = '2.1.43';
+  static const int currentBuildNumber = 43;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.43',
+      buildNumber: 43,
+      title: 'Исправлена ручная проверка и скачивание сборок с GitHub',
+      summary: 'При ручном нажатии «Проверить и скачать с GitHub» добавлен forceRecheck, перебор последних успешных run и подробное логирование причин, если сборка не найдена или не задан URL/токен.',
+      changes: [
+        'Добавлен флаг forceRecheck при ручной проверке сборок с GitHub',
+        'Добавлен перебор последних успешных workflow runs и проверка просроченных/пустых артефактов',
+        'Добавлены понятные сообщения и записи в журнал при пустом URL, отсутствии токена или уже обработанной сборке',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.42',
       buildNumber: 42,
@@ -96,16 +107,6 @@ class AppVersion {
       changes: [
         'Обновлены AGENTS.md, ROOT_MAP.md и MAP.md под актуальную архитектуру и процесс сборки',
         'Вынесен HomeShortcutsWrapper в lib/widgets/home_shortcuts.dart для уменьшения размера home_screen.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.35',
-      buildNumber: 35,
-      title: 'Исправлены ошибки анализатора в app_settings.dart и home_screen.dart',
-      summary: 'Убран лишний ); в AppSettings.fromJson и исправлены вызовы unawaited / const Shortcuts в lib/screens/home_screen.dart.',
-      changes: [
-        'Удалён лишний закрывающий ); на строке 120 в lib/models/app_settings.dart',
-        'Добавлен импорт dart:async, const для Shortcuts и корректный запуск асинхронного выхода в lib/screens/home_screen.dart',
       ],
     ),
   ];

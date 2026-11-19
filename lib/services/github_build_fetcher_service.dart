@@ -67,20 +67,24 @@ class GitHubBuildFetcherService {
     String? lastProcessedId,
     String zipFilter = '',
     bool takeAllBuilds = true,
+    bool forceRecheck = false,
   }) async {
     bool matchesFilter(String candidateName) {
       final cleanFilter = zipFilter.trim().toLowerCase();
       if (takeAllBuilds || cleanFilter.isEmpty) return true;
       return candidateName.toLowerCase().contains(cleanFilter);
     }
+
     final logs = <String>[];
     final repoApiBase = parseGitHubRepoUri(repoUrl);
     if (repoApiBase == null) {
+      const msg = 'Не задан или некорректен GitHub URL репозитория в настройках проекта.';
+      logs.add(msg);
       return const GitHubBuildFetchResult(
         success: false,
-        logs: <String>['Некорректный или пустой GitHub URL репозитория для автозагрузки сборок.'],
+        logs: <String>[msg],
         fetchedZips: <FetchedBuildItem>[],
-        errorMessage: 'Не задан корректный GitHub URL репозитория.',
+        errorMessage: msg,
       );
     }
 
@@ -129,85 +133,93 @@ class GitHubBuildFetcherService {
     }
 
     try {
-      final runsUri = Uri.parse('${repoApiBase.toString()}/actions/runs?status=completed&per_page=5');
+      logs.add('Запрос сборок GitHub для ${repoApiBase.path}...');
+      final runsUri = Uri.parse('${repoApiBase.toString()}/actions/runs?status=completed&per_page=10');
       final runsJson = await getJsonString(runsUri);
       if (runsJson != null) {
         final decodedRuns = jsonDecode(runsJson);
         if (decodedRuns is Map<String, dynamic> && decodedRuns['workflow_runs'] is List) {
-          final runs = (decodedRuns['workflow_runs'] as List).whereType<Map<String, dynamic>>().toList();
-          Map<String, dynamic>? bestRun;
-          for (final r in runs) {
-            final conclusion = (r['conclusion'] as String? ?? '').toLowerCase();
-            if (conclusion == 'success') {
-              bestRun = r;
-              break;
-            }
+          final runs = (decodedRuns['workflow_runs'] as List)
+              .whereType<Map<String, dynamic>>()
+              .where((r) => (r['conclusion'] as String? ?? '').toLowerCase() == 'success')
+              .toList();
+          if (runs.isEmpty) {
+            logs.add('Успешных завершённых workflow runs в Actions пока нет.');
           }
-          if (bestRun != null) {
+          for (final bestRun in runs.take(5)) {
             final runId = bestRun['id']?.toString() ?? '';
             final runSourceId = 'run:$runId';
-            if (runId.isNotEmpty && runSourceId != lastProcessedId) {
-              final artifactsUrlRaw = bestRun['artifacts_url'] as String?;
-              final artifactsUri = artifactsUrlRaw != null && artifactsUrlRaw.isNotEmpty
-                  ? Uri.parse(artifactsUrlRaw)
-                  : Uri.parse('${repoApiBase.toString()}/actions/runs/$runId/artifacts');
-              final artJson = await getJsonString(artifactsUri);
-              if (artJson != null) {
-                final decodedArt = jsonDecode(artJson);
-                if (decodedArt is Map<String, dynamic> && decodedArt['artifacts'] is List) {
-                  final artifacts = (decodedArt['artifacts'] as List).whereType<Map<String, dynamic>>().toList();
-                  for (final art in artifacts) {
-                    if (art['expired'] == true) continue;
-                    final artName = (art['name'] as String? ?? 'artifact').trim();
-                    final dlUrlRaw = art['archive_download_url'] as String?;
-                    if (dlUrlRaw == null || dlUrlRaw.isEmpty) continue;
-                    if (cleanToken.isEmpty) {
-                      logs.add('Артефакт "$artName" найден в run #$runId, но для скачивания артефактов Actions нужен GitHub Token.');
-                      continue;
-                    }
-                    final zipBytes = await downloadBytes(Uri.parse(dlUrlRaw), useAuth: true);
-                    if (zipBytes == null || zipBytes.isEmpty) continue;
+            if (runId.isEmpty) continue;
+            if (!forceRecheck && runSourceId == lastProcessedId) {
+              logs.add('Run #$runId уже был обработан ранее (пропущен).');
+              continue;
+            }
+            final artifactsUrlRaw = bestRun['artifacts_url'] as String?;
+            final artifactsUri = artifactsUrlRaw != null && artifactsUrlRaw.isNotEmpty
+                ? Uri.parse(artifactsUrlRaw)
+                : Uri.parse('${repoApiBase.toString()}/actions/runs/$runId/artifacts');
+            final artJson = await getJsonString(artifactsUri);
+            if (artJson == null) continue;
+            final decodedArt = jsonDecode(artJson);
+            if (decodedArt is! Map<String, dynamic> || decodedArt['artifacts'] is! List) continue;
+            final artifacts = (decodedArt['artifacts'] as List).whereType<Map<String, dynamic>>().toList();
+            if (artifacts.isEmpty) {
+              logs.add('В run #$runId нет артефактов.');
+              continue;
+            }
+            for (final art in artifacts) {
+              if (art['expired'] == true) {
+                logs.add('Артефакт "${art['name'] ?? 'artifact'}" в run #$runId просрочен.');
+                continue;
+              }
+              final artName = (art['name'] as String? ?? 'artifact').trim();
+              final dlUrlRaw = art['archive_download_url'] as String?;
+              if (dlUrlRaw == null || dlUrlRaw.isEmpty) continue;
+              if (cleanToken.isEmpty) {
+                logs.add('Артефакт "$artName" найден в run #$runId, но для скачивания артефактов Actions нужен GitHub Token.');
+                continue;
+              }
+              final zipBytes = await downloadBytes(Uri.parse(dlUrlRaw), useAuth: true);
+              if (zipBytes == null || zipBytes.isEmpty) continue;
 
-                    final outerArchive = ZipDecoder().decodeBytes(zipBytes, verify: false);
-                    var extractedInner = 0;
-                    for (final entry in outerArchive) {
-                      if (!entry.isFile) continue;
-                      final lowerName = p.basename(entry.name).toLowerCase();
-                      if (lowerName.endsWith('.zip') && matchesFilter(p.basename(entry.name))) {
-                        final safeZipName = p.basename(entry.name);
-                        final outZipPath = p.join(outDir.path, safeZipName);
-                        await File(outZipPath).writeAsBytes(entry.content as List<int>, flush: true);
-                        fetched.add(
-                          FetchedBuildItem(
-                            sourceId: runSourceId,
-                            zipPath: outZipPath,
-                            fileName: safeZipName,
-                            sourceLabel: 'GitHub Actions run #$runId ($artName)',
-                          ),
-                        );
-                        logs.add('Скачан архив сборки из артефакта: $outZipPath');
-                        extractedInner++;
-                      }
-                    }
-
-                    if (extractedInner == 0) {
-                      final safeName = '${artName}_run_$runId.zip';
-                      final outZipPath = p.join(outDir.path, safeName);
-                      await File(outZipPath).writeAsBytes(zipBytes, flush: true);
-                      fetched.add(
-                        FetchedBuildItem(
-                          sourceId: runSourceId,
-                          zipPath: outZipPath,
-                          fileName: safeName,
-                          sourceLabel: 'GitHub Actions run #$runId ($artName)',
-                        ),
-                      );
-                      logs.add('Сохранён артефакт сборки: $outZipPath');
-                    }
-                  }
+              final outerArchive = ZipDecoder().decodeBytes(zipBytes, verify: false);
+              var extractedInner = 0;
+              for (final entry in outerArchive) {
+                if (!entry.isFile) continue;
+                final lowerName = p.basename(entry.name).toLowerCase();
+                if (lowerName.endsWith('.zip') && matchesFilter(p.basename(entry.name))) {
+                  final safeZipName = p.basename(entry.name);
+                  final outZipPath = p.join(outDir.path, safeZipName);
+                  await File(outZipPath).writeAsBytes(entry.content as List<int>, flush: true);
+                  fetched.add(
+                    FetchedBuildItem(
+                      sourceId: runSourceId,
+                      zipPath: outZipPath,
+                      fileName: safeZipName,
+                      sourceLabel: 'GitHub Actions run #$runId ($artName)',
+                    ),
+                  );
+                  logs.add('Скачан архив сборки из артефакта: $outZipPath');
+                  extractedInner++;
                 }
               }
+
+              if (extractedInner == 0 && matchesFilter(artName)) {
+                final safeName = '${artName}_run_$runId.zip';
+                final outZipPath = p.join(outDir.path, safeName);
+                await File(outZipPath).writeAsBytes(zipBytes, flush: true);
+                fetched.add(
+                  FetchedBuildItem(
+                    sourceId: runSourceId,
+                    zipPath: outZipPath,
+                    fileName: safeName,
+                    sourceLabel: 'GitHub Actions run #$runId ($artName)',
+                  ),
+                );
+                logs.add('Сохранён артефакт сборки: $outZipPath');
+              }
             }
+            if (fetched.isNotEmpty) break;
           }
         }
       }
@@ -220,29 +232,37 @@ class GitHubBuildFetcherService {
           if (decodedRel is Map<String, dynamic>) {
             final tag = decodedRel['tag_name']?.toString() ?? decodedRel['id']?.toString() ?? '';
             final relSourceId = 'release:$tag';
-            if (tag.isNotEmpty && relSourceId != lastProcessedId && decodedRel['assets'] is List) {
-              for (final asset in (decodedRel['assets'] as List).whereType<Map<String, dynamic>>()) {
-                final name = (asset['name'] as String? ?? '').trim();
-                final dlUrl = asset['browser_download_url'] as String?;
-                if (name.isEmpty || dlUrl == null || dlUrl.isEmpty) continue;
-                if (!name.toLowerCase().endsWith('.zip') || !matchesFilter(name)) continue;
-                final bytes = await downloadBytes(Uri.parse(dlUrl), useAuth: cleanToken.isNotEmpty);
-                if (bytes == null || bytes.isEmpty) continue;
-                final outZipPath = p.join(outDir.path, name);
-                await File(outZipPath).writeAsBytes(bytes, flush: true);
-                fetched.add(
-                  FetchedBuildItem(
-                    sourceId: relSourceId,
-                    zipPath: outZipPath,
-                    fileName: name,
-                    sourceLabel: 'GitHub Release $tag',
-                  ),
-                );
-                logs.add('Скачан релизный ZIP с GitHub ($tag): $outZipPath');
+            if (tag.isNotEmpty && decodedRel['assets'] is List) {
+              if (!forceRecheck && relSourceId == lastProcessedId) {
+                logs.add('Релиз $tag уже был обработан ранее.');
+              } else {
+                for (final asset in (decodedRel['assets'] as List).whereType<Map<String, dynamic>>()) {
+                  final name = (asset['name'] as String? ?? '').trim();
+                  final dlUrl = asset['browser_download_url'] as String?;
+                  if (name.isEmpty || dlUrl == null || dlUrl.isEmpty) continue;
+                  if (!name.toLowerCase().endsWith('.zip') || !matchesFilter(name)) continue;
+                  final bytes = await downloadBytes(Uri.parse(dlUrl), useAuth: cleanToken.isNotEmpty);
+                  if (bytes == null || bytes.isEmpty) continue;
+                  final outZipPath = p.join(outDir.path, name);
+                  await File(outZipPath).writeAsBytes(bytes, flush: true);
+                  fetched.add(
+                    FetchedBuildItem(
+                      sourceId: relSourceId,
+                      zipPath: outZipPath,
+                      fileName: name,
+                      sourceLabel: 'GitHub Release $tag',
+                    ),
+                  );
+                  logs.add('Скачан релизный ZIP с GitHub ($tag): $outZipPath');
+                }
               }
             }
           }
         }
+      }
+
+      if (fetched.isEmpty) {
+        logs.add('Подходящих новых сборок для скачивания не найдено.');
       }
 
       return GitHubBuildFetchResult(
