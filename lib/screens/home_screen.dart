@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
@@ -14,9 +12,7 @@ import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../providers/project_provider.dart';
 import '../services/app_version.dart';
-import '../services/backup_service.dart';
 import '../services/build_bundle_service.dart';
-import '../services/files_to_prompt.dart';
 import '../services/window_size_listener.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
@@ -113,8 +109,8 @@ class HomeScreen extends StatelessWidget {
           body: HomeShortcutsWrapper(
             provider: provider,
             windowSizeListener: windowSizeListener,
-            onNewProject: _showCreateProjectDialog,
-            onOpenSettings: _showAboutDialog,
+            onNewProject: showCreateProjectDialog,
+            onOpenSettings: showAboutBackupDialog,
                           child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : Row(
@@ -1015,6 +1011,8 @@ class _TemplateManagerDialogState extends State<_TemplateManagerDialog> {
   late List<AgentTemplateItem> _templates;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  final FocusNode _nameFocusNode = FocusNode();
+  final FocusNode _contentFocusNode = FocusNode();
   String? _selectedId;
   String _error = '';
   bool _saving = false;
@@ -1030,6 +1028,8 @@ class _TemplateManagerDialogState extends State<_TemplateManagerDialog> {
   void dispose() {
     _nameController.dispose();
     _contentController.dispose();
+    _nameFocusNode.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
@@ -1061,6 +1061,11 @@ class _TemplateManagerDialogState extends State<_TemplateManagerDialog> {
     );
     setState(() => _templates.add(template));
     _select(id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _nameFocusNode.canRequestFocus) {
+        _nameFocusNode.requestFocus();
+      }
+    });
   }
 
   Future<void> _duplicateTemplate() async {
@@ -1189,7 +1194,13 @@ class _TemplateManagerDialogState extends State<_TemplateManagerDialog> {
                         children: [
                           const Text('Название шаблона', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                           const SizedBox(height: 6),
-                          TextField(controller: _nameController, enabled: selected != null, decoration: const InputDecoration(hintText: 'Например, Flutter Desktop + Riverpod')),
+                          TextField(
+                            controller: _nameController,
+                            focusNode: _nameFocusNode,
+                            enabled: selected != null && !_saving,
+                            readOnly: false,
+                            decoration: const InputDecoration(hintText: 'Например, Flutter Desktop + Riverpod'),
+                          ),
                           const SizedBox(height: 12),
                           Row(children: [
                             const Expanded(child: Text('Текст инструкции Markdown', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
@@ -1199,7 +1210,9 @@ class _TemplateManagerDialogState extends State<_TemplateManagerDialog> {
                           Expanded(
                             child: TextField(
                               controller: _contentController,
-                              enabled: selected != null,
+                              focusNode: _contentFocusNode,
+                              enabled: selected != null && !_saving,
+                              readOnly: false,
                               expands: true,
                               minLines: null,
                               maxLines: null,

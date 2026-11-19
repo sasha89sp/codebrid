@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -258,15 +257,5 @@ Future<void> showAboutBackupDialog(BuildContext context, ProjectProvider provide
   backupDirCtrl.dispose();
 }
 
-void _showAboutSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-  );
-}
 
-String _formatAboutDate(DateTime date) {
-  final local = date.toLocal();
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(local.day)}.${two(local.month)}.${local.year}';
-}
 

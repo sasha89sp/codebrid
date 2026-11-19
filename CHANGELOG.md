@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.40+40
+- Исправлено редактирование названия и текста нового шаблона в библиотеке шаблонов (`FocusNode`, `readOnly: false`, фокус на поле названия при создании), заменены вызовы `_showCreateProjectDialog`/`_showAboutDialog` на `showCreateProjectDialog`/`showAboutBackupDialog` и убраны неиспользуемые импорты и функции.
+
 ## 2.1.39+39
 - Восстановлены методы и геттеры `ProjectProvider` (`deployZipArchive`, `zipVersionsDirectoryFor`, `checkCurrentProjectGit`, `clearDeployLogs`, `applyBuildArchive`, `dismissPendingBuild`, `confirmPendingBuild`, `checkAndApplyGitHubBuilds`, `prepareForGracefulExit`), добавлен `dart:convert` и `super.key` в `files_to_prompt_dialog.dart` и убраны неиспользуемые элементы анализатора.
 

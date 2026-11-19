@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.39';
-  static const int currentBuildNumber = 39;
+  static const String currentVersion = '2.1.40';
+  static const int currentBuildNumber = 40;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.40',
+      buildNumber: 40,
+      title: 'Исправлено редактирование нового шаблона и ошибки анализатора из 2.1.39',
+      summary: 'Добавлены FocusNode и явное управление фокусом/readOnly в редакторе шаблонов, исправлены вызовы диалогов и удалены неиспользуемые импорты и функции.',
+      changes: [
+        'Добавлены _nameFocusNode, _contentFocusNode, readOnly: false и автофокус при создании шаблона в _TemplateManagerDialog',
+        'Исправлены вызовы showCreateProjectDialog и showAboutBackupDialog в home_screen.dart',
+        'Удалены неиспользуемые импорты и функции в home_screen.dart и about_backup_dialog.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.39',
       buildNumber: 39,
@@ -95,17 +106,6 @@ class AppVersion {
         'Исправлен порядок объявления windowSizeListener перед AppWindowCloseListener в lib/main.dart',
         'Удалено повторное объявление clearDeployLogs в lib/providers/project_provider.dart',
         'Добавлен импорт dart:typed_data для BytesBuilder в lib/services/github_build_fetcher_service.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.32',
-      buildNumber: 32,
-      title: 'Горячие клавиши, сохранение статуса сборок GitHub и кнопка папки версий ZIP',
-      summary: 'Реализованы глобальные горячие клавиши, сохранение ID обработанных сборок GitHub между перезапусками, фильтр имени при автоскачивании, актуальная версия в трее и кнопка открытия папки версий ZIP.',
-      changes: [
-        'Добавлены горячие клавиши Ctrl+N, Ctrl+, и Ctrl+Q и синхронизация переключения вкладок из меню',
-        'Сохраняется lastFetchedBuildSources в settings.json и учитывается buildZipFilter / buildTakeAllPublicBuilds при скачивании с GitHub',
-        'Обновлён тултип трея на актуальную версию AppVersion и добавлена кнопка «Папка версий ZIP» во вкладку «Авто-деплой»',
       ],
     ),
   ];
