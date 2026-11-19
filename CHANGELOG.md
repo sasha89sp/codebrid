@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.22+22
+- Удалены лишние модификаторы `const` (`unnecessary_const`) внутри `const Row` в `lib/screens/home_screen.dart`.
+
 ## 2.1.21+21
 - Устранены подсказки `prefer_const_constructors` и `prefer_const_literals_to_create_immutables` в диалоге «О программе» (`lib/screens/home_screen.dart`).
 

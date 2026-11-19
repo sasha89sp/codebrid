@@ -17,11 +17,20 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.21';
-  static const int currentBuildNumber = 21;
+  static const String currentVersion = '2.1.22';
+  static const int currentBuildNumber = 22;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.22',
+      buildNumber: 22,
+      title: 'Удалены лишние const внутри const Row в lib/screens/home_screen.dart',
+      summary: 'Исправлены предупреждения unnecessary_const на строках 1896 и 1897 в диалоге «О программе».',
+      changes: [
+        'Убран лишний const перед Icon и SizedBox внутри const Row в _showAboutDialog',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.21',
       buildNumber: 21,

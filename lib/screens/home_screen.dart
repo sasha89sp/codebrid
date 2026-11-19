@@ -1893,8 +1893,8 @@ Future<void> _showAboutDialog(BuildContext context, ProjectProvider provider) as
           return AlertDialog(
             title: const Row(
               children: [
-                const Icon(Icons.info_outline_rounded, size: 22),
-                const SizedBox(width: 8),
+                Icon(Icons.info_outline_rounded, size: 22),
+                SizedBox(width: 8),
                 Text('CodeBridge Mini — v${AppVersion.fullVersion}'),
               ],
             ),
