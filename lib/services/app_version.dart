@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.44';
-  static const int currentBuildNumber = 44;
+  static const String currentVersion = '2.1.45';
+  static const int currentBuildNumber = 45;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.45',
+      buildNumber: 45,
+      title: 'Панель окна в стиле macOS с поведением кнопок Windows',
+      summary: 'Добавлена верхняя панель окна в стиле macOS («светофор») с сохранением поведения кнопок и границ изменения размера окна Windows через Win32 и MethodChannel.',
+      changes: [
+        'Добавлен виджет MacOsWindowTitleBar с кнопками закрытия, сворачивания и разворачивания/восстановления окна и перетаскиванием заголовка',
+        'Настроен Win32-обработчик окна в windows/runner/flutter_window.cpp с сохранением рамки изменения размера и команд окна Windows',
+        'Обновлена версия до 2.1.45+45 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.44',
       buildNumber: 44,
@@ -97,17 +108,6 @@ class AppVersion {
         'Вынесены диалоги создания и переименования проекта в lib/widgets/project_dialogs.dart',
         'Вынесен диалог настроек, бэкапов и истории версий в lib/widgets/about_backup_dialog.dart',
         'Выделен BackupCoordinator в lib/services/backup_coordinator_service.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.37',
-      buildNumber: 37,
-      title: 'Вынос диалога «Файлы → текст для ИИ», координатор опроса GitHub и компактная история версий',
-      summary: 'Разгружены home_screen.dart и project_provider.dart за счёт выделения отдельных модулей, а история в AppVersion ограничена последними ключевыми релизами.',
-      changes: [
-        'Вынесен диалог «Файлы → текст для ИИ» в lib/widgets/files_to_prompt_dialog.dart',
-        'Выделен GitHubBuildPollingCoordinator в lib/services/github_build_polling_service.dart',
-        'Сокращён список ReleaseEntry в AppVersion до последних ключевых версий (полная история в CHANGELOG.md)',
       ],
     ),
   ];

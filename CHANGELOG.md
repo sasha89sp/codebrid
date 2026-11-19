@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.45+45
+- Добавлена панель окна в стиле macOS (`MacOsWindowTitleBar`) с поведением кнопок Windows (закрытие, сворачивание, разворачивание/восстановление по клику и двойному клику по заголовку, перетаскивание и сохранение границ изменения размера окна в `flutter_window.cpp`).
+
 ## 2.1.44+44
 - Исправлены ошибки `flutter analyze`: оформлены методы расширения в `build_bundle_service.dart` без `static`, удалён неиспользуемый `_clearDirectory`, добавлены `_buildAutoLaunchExe` и `_buildHistoryKeepCount` и поправлена структура `Column` в `build_capture_tab.dart`, удалён неиспользуемый импорт в `home_screen.dart`.
 

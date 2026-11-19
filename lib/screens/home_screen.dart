@@ -20,6 +20,7 @@ import '../widgets/about_backup_dialog.dart';
 import '../widgets/files_to_prompt_dialog.dart';
 import '../widgets/project_dialogs.dart';
 import '../widgets/home_shortcuts.dart';
+import '../widgets/macos_window_title_bar.dart';
 import '../widgets/section_header.dart';
 import '../widgets/template_manager_dialog.dart';
 
@@ -52,7 +53,16 @@ class HomeScreen extends StatelessWidget {
     return Consumer<ProjectProvider>(
       builder: (context, provider, _) {
         return Scaffold(
-          appBar: AppBar(
+          body: Column(
+            children: [
+              if (Platform.isWindows)
+                const MacOsWindowTitleBar(
+                  title: 'CodeBridge Mini',
+                  subtitle: AppVersion.currentVersion,
+                ),
+              Expanded(
+                child: Scaffold(
+                  appBar: AppBar(
             title: Row(
               children: [
                 Container(
@@ -111,19 +121,23 @@ class HomeScreen extends StatelessWidget {
             windowSizeListener: windowSizeListener,
             onNewProject: showCreateProjectDialog,
             onOpenSettings: showAboutBackupDialog,
-                          child: provider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Row(
-                  children: [
-                    _ProjectSidebar(provider: provider),
-                    const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE7EAF1)),
-                    Expanded(
-                      child: provider.currentProject == null
-                          ? const _WelcomePanel()
-                          : _ProjectWorkspace(key: ValueKey(provider.currentProject!.id)),
-                    ),
-                  ],
-                ),
+            child: provider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Row(
+                    children: [
+                      _ProjectSidebar(provider: provider),
+                      const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE7EAF1)),
+                      Expanded(
+                        child: provider.currentProject == null
+                            ? const _WelcomePanel()
+                            : _ProjectWorkspace(key: ValueKey(provider.currentProject!.id)),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+              ),
+            ],
           ),
         );
       },
