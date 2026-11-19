@@ -1,16 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.45: панель окна в стиле macOS с поведением кнопок Windows"
+current_stage: "Релиз 2.1.46: исправлен вызов static-методов в BuildBundleService"
 
 completed:
-  - "Добавлен виджет MacOsWindowTitleBar в lib/widgets/macos_window_title_bar.dart и подключён в home_screen.dart"
-  - "Добавлен обработчик команд окна и границ изменения размера в windows/runner/flutter_window.cpp"
-  - "Обновлена версия до 2.1.45+45 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Возвращены _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny в BuildBundleService как static"
+  - "Обновлена версия до 2.1.46+46 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
-  - "Локальный flutter analyze и компиляция C++ на Windows в этом контейнере не запускались"
+  - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions и работу кнопок окна / изменения размера на Windows"
+  - "Проверить Build portable Windows x64 на GitHub Actions (шаг Analyze Dart code и сборка Windows)"
 
 next_step: >
-  Залить архив 2.1.45 в репозиторий и проверить сборку Windows на GitHub.
+  Залить архив 2.1.46 в репозиторий и проверить прохождение Analyze Dart code и сборки Windows.

@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.46+46
+- Исправлена ошибка `instance_member_access_from_static` в `lib/services/build_bundle_service.dart`: вспомогательные методы `_clearDirectorySafe`, `_copyDirectoryContentsSafe`, `_pruneHistory` и `_launchNewestExeIfAny` возвращены в `BuildBundleService` как `static`.
+
 ## 2.1.45+45
 - Добавлена панель окна в стиле macOS (`MacOsWindowTitleBar`) с поведением кнопок Windows (закрытие, сворачивание, разворачивание/восстановление по клику и двойному клику по заголовку, перетаскивание и сохранение границ изменения размера окна в `flutter_window.cpp`).
 

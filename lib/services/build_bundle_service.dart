@@ -306,10 +306,7 @@ class BuildBundleService {
     final ms = dt.millisecond.toString().padLeft(3, '0');
     return '${dt.year}${two(dt.month)}${two(dt.day)}_${two(dt.hour)}${two(dt.minute)}${two(dt.second)}_$ms';
   }
-}
-
-extension _BuildBundleServiceExtensions on BuildBundleService {
-  Future<void> _clearDirectorySafe(Directory dir, List<String> logs) async {
+  static Future<void> _clearDirectorySafe(Directory dir, List<String> logs) async {
     if (!await dir.exists()) return;
     await for (final entity in dir.list(followLinks: false)) {
       try {
@@ -320,7 +317,7 @@ extension _BuildBundleServiceExtensions on BuildBundleService {
     }
   }
 
-  Future<void> _copyDirectoryContentsSafe(
+  static Future<void> _copyDirectoryContentsSafe(
     Directory source,
     Directory destination,
     List<String> logs,
@@ -346,7 +343,7 @@ extension _BuildBundleServiceExtensions on BuildBundleService {
     }
   }
 
-  Future<void> _pruneHistory(
+  static Future<void> _pruneHistory(
     Directory historyRoot,
     int keepCount,
     List<String> logs,
@@ -372,7 +369,7 @@ extension _BuildBundleServiceExtensions on BuildBundleService {
     }
   }
 
-  Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
+  static Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
     if (!await currentDir.exists()) return null;
     final exeFiles = <File>[];
     await for (final entity in currentDir.list(recursive: true, followLinks: false)) {
@@ -402,4 +399,5 @@ extension _BuildBundleServiceExtensions on BuildBundleService {
       return null;
     }
   }
+
 }

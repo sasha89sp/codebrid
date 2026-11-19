@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.45';
-  static const int currentBuildNumber = 45;
+  static const String currentVersion = '2.1.46';
+  static const int currentBuildNumber = 46;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.46',
+      buildNumber: 46,
+      title: 'Исправлен вызов методов из static applyDownloadedBuild в BuildBundleService',
+      summary: 'Вспомогательные методы _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny возвращены в класс BuildBundleService с модификатором static.',
+      changes: [
+        'Возвращены _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny в BuildBundleService как static-методы',
+        'Устранена ошибка instance_member_access_from_static при вызове из applyDownloadedBuild',
+        'Обновлена версия до 2.1.46+46 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.45',
       buildNumber: 45,
@@ -97,17 +108,6 @@ class AppVersion {
         'Восстановлены методы и геттеры деплоя, перехвата сборок, опроса GitHub и корректного выхода в ProjectProvider',
         'Добавлен импорт dart:convert (utf8) и параметр super.key в FilesToPromptDialog',
         'Удалены неиспользуемые функции и импорт в about_backup_dialog.dart, files_to_prompt_dialog.dart и project_dialogs.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.38',
-      buildNumber: 38,
-      title: 'Вынесены диалоги проектов/настроек и координатор бэкапов',
-      summary: 'Продолжена разгрузка home_screen.dart и project_provider.dart за счёт выделения диалогов проектов, диалога настроек/бэкапов и BackupCoordinator.',
-      changes: [
-        'Вынесены диалоги создания и переименования проекта в lib/widgets/project_dialogs.dart',
-        'Вынесен диалог настроек, бэкапов и истории версий в lib/widgets/about_backup_dialog.dart',
-        'Выделен BackupCoordinator в lib/services/backup_coordinator_service.dart',
       ],
     ),
   ];
