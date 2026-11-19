@@ -969,7 +969,236 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
             children: order.map(_bodyForTab).toList(),
           ),
         ),
+        _PinnedUnifiedLogDock(provider: provider),
       ],
+    );
+  }
+}
+
+class _PinnedUnifiedLogDock extends StatefulWidget {
+  const _PinnedUnifiedLogDock({required this.provider});
+
+  final ProjectProvider provider;
+
+  @override
+  State<_PinnedUnifiedLogDock> createState() => _PinnedUnifiedLogDockState();
+}
+
+class _PinnedUnifiedLogDockState extends State<_PinnedUnifiedLogDock> {
+  bool _collapsed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = widget.provider;
+    final logs = provider.activityLogs;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFDCE2EE), width: 1),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.terminal_rounded,
+                size: 17,
+                color: Color(0xFF3B4968),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Журнал событий (${logs.length})',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF202A40),
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (provider.lastBuildAutoCheckAt != null)
+                Expanded(
+                  child: Row(
+                    children: [
+                      if (provider.lastBuildCheckHadFailure) ...[
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 16,
+                          color: Color(0xFFDC2626),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          'GitHub: ${provider.lastBuildAutoCheckAt}${provider.lastBuildAutoCheckSummary != null ? ' — ${provider.lastBuildAutoCheckSummary}' : ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: provider.lastBuildCheckHadFailure
+                                ? const Color(0xFFB91C1C)
+                                : const Color(0xFF5A667E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (provider.lastDeployStatus != null)
+                Expanded(
+                  child: Text(
+                    provider.lastDeployStatus!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5A667E),
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              const SizedBox(width: 8),
+              DropdownButton<int>(
+                value: provider.logRetentionDays,
+                isDense: true,
+                underline: const SizedBox.shrink(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF273149),
+                ),
+                items: const <DropdownMenuItem<int>>[
+                  DropdownMenuItem<int>(value: 7, child: Text('За 7 дней')),
+                  DropdownMenuItem<int>(value: 30, child: Text('За 30 дней')),
+                  DropdownMenuItem<int>(value: 90, child: Text('За 90 дней')),
+                  DropdownMenuItem<int>(value: 0, child: Text('Без ограничения')),
+                ],
+                onChanged: (int? days) {
+                  if (days != null) unawaited(provider.setLogRetentionDays(days));
+                },
+              ),
+              const SizedBox(width: 6),
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: logs.isEmpty
+                    ? null
+                    : () => unawaited(provider.clearActivityLogs()),
+                child: const Text('Удалить историю', style: TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: _collapsed ? 'Развернуть журнал' : 'Свернуть журнал',
+                visualDensity: VisualDensity.compact,
+                onPressed: () => setState(() => _collapsed = !_collapsed),
+                icon: Icon(
+                  _collapsed
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          if (provider.latestFailedGitHubBuild != null) ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final failure = provider.latestFailedGitHubBuild!;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 18,
+                        color: Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          [
+                            'Сборка на GitHub не удалась (run #${failure.runId} — ${failure.conclusion})',
+                            if (failure.workflowName.isNotEmpty) failure.workflowName,
+                            if (failure.branch.isNotEmpty) 'ветка ${failure.branch}',
+                            if (failure.commitTitle.isNotEmpty) failure.commitTitle,
+                          ].join(' • '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF991B1B),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Скрыть уведомление',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: provider.dismissGitHubBuildFailureBanner,
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: Color(0xFF991B1B),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+          if (!_collapsed) ...[
+            const SizedBox(height: 8),
+            Container(
+              height: 156,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141A26),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: logs.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Событий пока нет. Новые записи авто-деплоя и распаковки сборок будут появляться сверху.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      child: SelectableText(
+                        logs.join('
+'),
+                        style: const TextStyle(
+                          fontFamily: 'Consolas',
+                          fontSize: 12,
+                          height: 1.45,
+                          color: Color(0xFFE2E8F0),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -49,7 +49,8 @@ class ProjectProvider extends ChangeNotifier {
   String downloadsWatchPath = DownloadsWatcherService.defaultDownloadsPath();
   bool downloadsWatcherEnabled = false;
   List<String> tabOrder = const <String>['agent', 'import', 'files', 'notes', 'auto_deploy', 'build_capture'];
-  final List<String> deployLogs = <String>[];
+  final List<String> activityLogs = <String>[];
+  List<String> get deployLogs => activityLogs;
   String? lastDeployStatus;
   GitStatusSummary? lastGitStatus;
   String? pendingBuildZipPath;
@@ -59,7 +60,7 @@ class ProjectProvider extends ChangeNotifier {
   String? lastBuildAutoCheckSummary;
   bool lastBuildCheckHadFailure = false;
   GitHubBuildFailureInfo? latestFailedGitHubBuild;
-  final List<String> unpackLogs = <String>[];
+  List<String> get unpackLogs => activityLogs;
   String githubToken = '';
   String githubOwner = '';
   int logRetentionDays = 30;
@@ -141,20 +142,12 @@ class ProjectProvider extends ChangeNotifier {
       githubToken = settings.githubToken;
       githubOwner = settings.githubOwner;
       logRetentionDays = settings.logRetentionDays;
-      final savedDeploy = await storage.loadAndPruneLogHistory(
-        channel: 'deploy',
+      final savedUnified = await storage.loadUnifiedLogHistory(
         retentionDays: logRetentionDays,
       );
-      final savedUnpack = await storage.loadAndPruneLogHistory(
-        channel: 'unpack',
-        retentionDays: logRetentionDays,
-      );
-      deployLogs
+      activityLogs
         ..clear()
-        ..addAll(savedDeploy);
-      unpackLogs
-        ..clear()
-        ..addAll(savedUnpack);
+        ..addAll(savedUnified);
       _lastFetchedBuildSourceByProject
         ..clear()
         ..addAll(settings.lastFetchedBuildSources);
@@ -1181,29 +1174,23 @@ class ProjectProvider extends ChangeNotifier {
     logRetentionDays = normalized;
     final current = await storage.loadSettings();
     await storage.saveSettings(current.copyWith(logRetentionDays: normalized));
-    final prunedDeploy = await storage.loadAndPruneLogHistory(
-      channel: 'deploy',
+    final prunedUnified = await storage.loadUnifiedLogHistory(
       retentionDays: normalized,
     );
-    final prunedUnpack = await storage.loadAndPruneLogHistory(
-      channel: 'unpack',
-      retentionDays: normalized,
-    );
-    deployLogs
+    activityLogs
       ..clear()
-      ..addAll(prunedDeploy);
-    unpackLogs
-      ..clear()
-      ..addAll(prunedUnpack);
+      ..addAll(prunedUnified);
     notifyListeners();
   }
 
-  Future<void> clearDeployLogs() async {
-    deployLogs.clear();
+  Future<void> clearActivityLogs() async {
+    activityLogs.clear();
     lastDeployStatus = null;
-    await storage.clearLogHistory('deploy');
+    await storage.clearAllLogHistories();
     notifyListeners();
   }
+
+  Future<void> clearDeployLogs() => clearActivityLogs();
 
   String zipVersionsDirectoryFor(CodeProject project) {
     if (project.zipArchiveFolder.trim().isNotEmpty) {
@@ -1389,45 +1376,31 @@ class ProjectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> clearUnpackLogs() async {
-    unpackLogs.clear();
-    await storage.clearLogHistory('unpack');
-    notifyListeners();
-  }
+  Future<void> clearUnpackLogs() => clearActivityLogs();
 
-  void _appendUnpackLog(String message) {
+  void _appendActivityLog(String message) {
     final now = DateTime.now();
     final hh = now.hour.toString().padLeft(2, '0');
     final mm = now.minute.toString().padLeft(2, '0');
     final ss = now.second.toString().padLeft(2, '0');
     final line = '[$hh:$mm:$ss] $message';
-    unpackLogs.add(line);
-    if (unpackLogs.length > 500) {
-      unpackLogs.removeRange(0, unpackLogs.length - 500);
+    if (activityLogs.isNotEmpty && activityLogs.first == line) {
+      return;
+    }
+    activityLogs.insert(0, line);
+    if (activityLogs.length > 500) {
+      activityLogs.removeRange(500, activityLogs.length);
     }
     unawaited(storage.appendLogEntry(
-      channel: 'unpack',
+      channel: 'unified',
       line: line,
       retentionDays: logRetentionDays,
     ));
   }
 
-  void _appendDeployLog(String message) {
-    final now = DateTime.now();
-    final hh = now.hour.toString().padLeft(2, '0');
-    final mm = now.minute.toString().padLeft(2, '0');
-    final ss = now.second.toString().padLeft(2, '0');
-    final line = '[$hh:$mm:$ss] $message';
-    deployLogs.add(line);
-    if (deployLogs.length > 500) {
-      deployLogs.removeRange(0, deployLogs.length - 500);
-    }
-    unawaited(storage.appendLogEntry(
-      channel: 'deploy',
-      line: line,
-      retentionDays: logRetentionDays,
-    ));
-  }
+  void _appendUnpackLog(String message) => _appendActivityLog(message);
+
+  void _appendDeployLog(String message) => _appendActivityLog(message);
 
   Future<void> prepareResponse(String response) async {
     errorMessage = null;

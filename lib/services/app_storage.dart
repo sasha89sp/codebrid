@@ -523,6 +523,75 @@ class AppStorage {
   }
 
 
+  Future<List<String>> loadUnifiedLogHistory({
+    required int retentionDays,
+  }) async {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final maxAgeMs = retentionDays > 0
+        ? Duration(days: retentionDays).inMilliseconds
+        : null;
+
+    Future<List<Map<String, Object?>>> readChannel(String channel) async {
+      final file = File(p.join(logsDirectory, '${channel}_history.json'));
+      if (!await file.exists()) return <Map<String, Object?>>[];
+      try {
+        final decoded = jsonDecode(await file.readAsString(encoding: utf8));
+        if (decoded is! List) return <Map<String, Object?>>[];
+        final out = <Map<String, Object?>>[];
+        for (final raw in decoded) {
+          if (raw is! Map<String, dynamic>) continue;
+          final ts = (raw['ts'] as num?)?.toInt() ?? nowMs;
+          final line = raw['line']?.toString();
+          if (line == null || line.isEmpty) continue;
+          if (maxAgeMs != null && (nowMs - ts) > maxAgeMs) continue;
+          out.add({'ts': ts, 'line': line});
+        }
+        return out;
+      } catch (_) {
+        return <Map<String, Object?>>[];
+      }
+    }
+
+    final unifiedFile = File(p.join(logsDirectory, 'unified_history.json'));
+    List<Map<String, Object?>> entries;
+    if (await unifiedFile.exists()) {
+      entries = await readChannel('unified');
+    } else {
+      // Однократная миграция старых раздельных журналов deploy и unpack.
+      final deployEntries = await readChannel('deploy');
+      final unpackEntries = await readChannel('unpack');
+      final combined = <Map<String, Object?>>[...deployEntries, ...unpackEntries];
+      combined.sort((a, b) => (a['ts'] as int).compareTo(b['ts'] as int));
+      final deduped = <Map<String, Object?>>[];
+      for (final item in combined) {
+        if (deduped.isNotEmpty &&
+            deduped.last['line'] == item['line'] &&
+            ((item['ts'] as int) - (deduped.last['ts'] as int)).abs() < 1500) {
+          continue;
+        }
+        deduped.add(item);
+      }
+      entries = deduped;
+      if (entries.isNotEmpty) {
+        await Directory(logsDirectory).create(recursive: true);
+        final capped = entries.length > 500
+            ? entries.sublist(entries.length - 500)
+            : entries;
+        await _writeLogEntries(unifiedFile, capped);
+      }
+    }
+
+    entries.sort((a, b) => (b['ts'] as int).compareTo(a['ts'] as int));
+    final trimmed = entries.length > 500 ? entries.sublist(0, 500) : entries;
+    return trimmed.map((e) => e['line'].toString()).toList();
+  }
+
+  Future<void> clearAllLogHistories() async {
+    for (final channel in const <String>['unified', 'deploy', 'unpack']) {
+      await clearLogHistory(channel);
+    }
+  }
+
   Future<List<String>> loadAndPruneLogHistory({
     required String channel,
     required int retentionDays,

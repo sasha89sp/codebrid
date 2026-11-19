@@ -322,78 +322,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _CardSection(
-            title: '3. Журнал авто-деплоя',
-            trailing: Wrap(
-              spacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                DropdownButton<int>(
-                  value: provider.logRetentionDays,
-                  underline: const SizedBox.shrink(),
-                  items: const <DropdownMenuItem<int>>[
-                    DropdownMenuItem<int>(value: 7, child: Text('За 7 дней')),
-                    DropdownMenuItem<int>(value: 30, child: Text('За 30 дней')),
-                    DropdownMenuItem<int>(value: 90, child: Text('За 90 дней')),
-                    DropdownMenuItem<int>(value: 0, child: Text('Без ограничения')),
-                  ],
-                  onChanged: (int? days) {
-                    if (days != null) unawaited(provider.setLogRetentionDays(days));
-                  },
-                ),
-                TextButton(
-                  onPressed: provider.deployLogs.isEmpty
-                      ? null
-                      : () => unawaited(provider.clearDeployLogs()),
-                  child: const Text('Удалить историю'),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (provider.lastDeployStatus != null) ...[
-                  Text(
-                    provider.lastDeployStatus!,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF202A40),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                Container(
-                  height: 220,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141A26),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: provider.deployLogs.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Событий пока нет. Включите мониторинг «Загрузок», выберите ZIP вручную или откройте .zip через code_bridge_mini.exe.',
-                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          reverse: true,
-                          child: SelectableText(
-                            provider.deployLogs.join('\n'),
-                            style: const TextStyle(
-                              fontFamily: 'Consolas',
-                              fontSize: 12.5,
-                              height: 1.45,
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          ),
+
         ],
       ),
     );

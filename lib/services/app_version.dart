@@ -17,11 +17,23 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.68';
-  static const int currentBuildNumber = 68;
+  static const String currentVersion = '2.1.69';
+  static const int currentBuildNumber = 69;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.69',
+      buildNumber: 69,
+      title: 'Единый журнал событий, закреплённый снизу с выводом новых записей сверху',
+      summary: 'Журнал авто-деплоя и журнал распаковки сборок объединены в одну закреплённую нижнюю панель под рабочей областью вкладок, где самые свежие записи отображаются сверху, а старые уходят вниз.',
+      changes: [
+        'Объединены каналы журналов авто-деплоя и распаковки сборок в единый поток activityLogs (новые записи добавляются сверху, старые уходят вниз, сохранение в unified_history.json с миграцией старых логов)',
+        'Добавлена закреплённая нижняя панель «Журнал событий» в рабочем экране с баннером ошибок GitHub, статусом проверки, выбором срока хранения, очисткой и сворачиванием',
+        'Убраны дублирующиеся отдельные блоки журналов со вкладок «Авто-деплой» и «Распаковка сборок»',
+        'Обновлена версия до 2.1.69+69 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.68',
       buildNumber: 68,
@@ -94,17 +106,6 @@ class AppVersion {
       changes: [
         'Заменено [branch] на [branch] в lib/services/github_build_fetcher_service.dart',
         'Обновлена версия до 2.1.62+62 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.61',
-      buildNumber: 61,
-      title: 'Оповещение об упавшей сборке GitHub в статусе, журнале и баннере',
-      summary: 'При проверке сборок с GitHub программа отслеживает статус последнего завершённого workflow run и при ошибке сборки выводит красный баннер, подсвечивает строку статуса и записывает ошибку в журнал распаковки.',
-      changes: [
-        'В GitHubBuildFetcherService добавлено определение упавших workflow runs (failure, cancelled, timed_out и др.) с номером run, веткой и коммитом',
-        'Добавлены красный баннер с кнопкой скрытия, подсветка статуса «Последняя проверка GitHub» и запись [ОШИБКА СБОРКИ GITHUB] в журнал распаковки',
-        'Обновлена версия до 2.1.61+61 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];
