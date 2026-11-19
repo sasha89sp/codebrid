@@ -93,7 +93,7 @@ class ProjectProvider extends ChangeNotifier {
         unawaited(_runAutoBackupIfDue());
       }
       if (settings.tabOrder.isNotEmpty) {
-        const allowed = <String>['agent', 'import', 'files', 'auto_deploy'];
+        const allowed = <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
         final normalized = <String>[];
         for (final id in settings.tabOrder) {
           if (allowed.contains(id) && !normalized.contains(id)) {

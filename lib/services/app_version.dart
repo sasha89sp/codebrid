@@ -17,11 +17,20 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.17';
-  static const int currentBuildNumber = 17;
+  static const String currentVersion = '2.1.18';
+  static const int currentBuildNumber = 18;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.18',
+      buildNumber: 18,
+      title: 'Исправлен отсев вкладки «Распаковка сборок» при загрузке настроек',
+      summary: 'В ProjectProvider при нормализации порядка вкладок из settings.json добавлен идентификатор build_capture.',
+      changes: [
+        'В список allowed при загрузке settings.json добавлен build_capture, чтобы вкладка «Распаковка сборок» не вырезалась при запуске',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.17',
       buildNumber: 17,
