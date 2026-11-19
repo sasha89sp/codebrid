@@ -17,18 +17,28 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.62';
-  static const int currentBuildNumber = 62;
+  static const String currentVersion = '2.1.63';
+  static const int currentBuildNumber = 63;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.63',
+      buildNumber: 63,
+      title: 'Исправлена константная строка в истории релизов app_version.dart',
+      summary: 'В константном списке ReleaseEntry в lib/services/app_version.dart заменена интерполяция ${branch} на обычный текст [branch].',
+      changes: [
+        'Заменено [${branch}] на [branch] в константном списке history в lib/services/app_version.dart',
+        'Обновлена версия до 2.1.63+63 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.62',
       buildNumber: 62,
       title: 'Убраны лишние фигурные скобки в строковой интерполяции github_build_fetcher_service.dart',
       summary: 'Исправлено замечание анализатора unnecessary_brace_in_string_interps на строке 43 в lib/services/github_build_fetcher_service.dart.',
       changes: [
-        'Заменено [${branch}] на [$branch] в lib/services/github_build_fetcher_service.dart',
+        'Заменено [branch] на [branch] в lib/services/github_build_fetcher_service.dart',
         'Обновлена версия до 2.1.62+62 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
@@ -94,17 +104,6 @@ class AppVersion {
         'Добавлено определение версии скачанной и распакованной сборки и её вывод в сводке «Последняя проверка GitHub» и журнале распаковки',
         'Встроена иконка IDI_APP_ICON в Runner.rc, win32_window.cpp (WM_SETICON) и windowManager.setIcon для отображения значка в панели задач Windows',
         'Обновлена версия до 2.1.56+56 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.55',
-      buildNumber: 55,
-      title: 'Исправлена инициализация и copyWith для logRetentionDays в AppSettings',
-      summary: 'В класс AppSettings добавлены инициализация по умолчанию (30 дней), именованный параметр copyWith и сериализация JSON для поля logRetentionDays.',
-      changes: [
-        'Добавлен параметр this.logRetentionDays = 30 в конструктор AppSettings',
-        'Добавлен именованный параметр int? logRetentionDays в AppSettings.copyWith и сериализация toJson/fromJson',
-        'Обновлена версия до 2.1.55+55 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];
