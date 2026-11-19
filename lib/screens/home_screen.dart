@@ -202,68 +202,270 @@ class _WelcomePanel extends StatelessWidget {
   }
 }
 
-class _ProjectWorkspace extends StatelessWidget {
+class _ProjectWorkspace extends StatefulWidget {
   const _ProjectWorkspace({super.key});
 
   @override
+  State<_ProjectWorkspace> createState() => _ProjectWorkspaceState();
+}
+
+class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProviderStateMixin {
+  TabController? _tabController;
+  String _signature = '';
+  int _activeIndex = 0;
+
+  void _ensureController(List<String> order) {
+    final sig = order.join(',');
+    if (_tabController != null && _signature == sig) return;
+    final prevIndex = (_tabController?.index ?? _activeIndex).clamp(0, order.length - 1);
+    _tabController?.dispose();
+    _signature = sig;
+    _activeIndex = prevIndex;
+    _tabController = TabController(
+      length: order.length,
+      vsync: this,
+      initialIndex: prevIndex,
+    )..addListener(() {
+        if (_tabController != null && _activeIndex != _tabController!.index) {
+          setState(() => _activeIndex = _tabController!.index);
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  IconData _iconForTab(String id) {
+    switch (id) {
+      case 'agent':
+        return Icons.description_outlined;
+      case 'import':
+        return Icons.content_paste_go_rounded;
+      case 'files':
+        return Icons.folder_copy_outlined;
+      case 'auto_deploy':
+      default:
+        return Icons.rocket_launch_outlined;
+    }
+  }
+
+  String _labelForTab(String id) {
+    switch (id) {
+      case 'agent':
+        return 'Инструкция';
+      case 'import':
+        return 'Ответ ИИ';
+      case 'files':
+        return 'Файлы проекта';
+      case 'auto_deploy':
+      default:
+        return 'Авто-деплой';
+    }
+  }
+
+  Widget _bodyForTab(String id) {
+    switch (id) {
+      case 'agent':
+        return const _AgentTab();
+      case 'import':
+        return const _ImportTab();
+      case 'files':
+        return const _FilesTab();
+      case 'auto_deploy':
+      default:
+        return const AutoDeployTab();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final project = context.watch<ProjectProvider>().currentProject!;
-    return DefaultTabController(
-      length: 4,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(28, 24, 28, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(project.name, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40))),
-                          const SizedBox(height: 5),
-                          Text(project.description.isEmpty ? 'Описание задачи не задано' : project.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF7C879A))),
-                        ],
+    final provider = context.watch<ProjectProvider>();
+    final project = provider.currentProject!;
+    final order = provider.tabOrder;
+    _ensureController(order);
+    final controller = _tabController!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(28, 24, 28, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(project.name, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40))),
+                        const SizedBox(height: 5),
+                        Text(project.description.isEmpty ? 'Описание задачи не задано' : project.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF7C879A))),
+                      ],
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _openFolder(context, project.outputPath),
+                    icon: const Icon(Icons.folder_open_outlined, size: 17),
+                    label: const Text('Открыть папку'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 62,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: order.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 28),
+                        itemBuilder: (context, index) {
+                          final tabId = order[index];
+                          final selected = controller.index == index;
+                          return DragTarget<int>(
+                            onWillAcceptWithDetails: (details) => details.data != index,
+                            onAcceptWithDetails: (details) {
+                              final fromIdx = details.data;
+                              final toIdx = index > fromIdx ? index + 1 : index;
+                              provider.reorderTabs(fromIdx, toIdx);
+                            },
+                            builder: (context, candidateData, rejectedData) {
+                              final isHoverTarget = candidateData.isNotEmpty;
+                              return LongPressDraggable<int>(
+                                data: index,
+                                feedback: Material(
+                                  elevation: 4,
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(_iconForTab(tabId), size: 18, color: Theme.of(context).colorScheme.primary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _labelForTab(tabId),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.4,
+                                  child: _WorkspaceTabItem(
+                                    icon: _iconForTab(tabId),
+                                    label: _labelForTab(tabId),
+                                    selected: selected,
+                                    isHoverTarget: false,
+                                    onTap: () => controller.animateTo(index),
+                                  ),
+                                ),
+                                child: _WorkspaceTabItem(
+                                  icon: _iconForTab(tabId),
+                                  label: _labelForTab(tabId),
+                                  selected: selected,
+                                  isHoverTarget: isHoverTarget,
+                                  onTap: () => controller.animateTo(index),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => _openFolder(context, project.outputPath),
-                      icon: const Icon(Icons.folder_open_outlined, size: 17),
-                      label: const Text('Папка файлов'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const TabBar(
-                  tabs: [
-                    Tab(icon: Icon(Icons.description_outlined, size: 18), text: 'Инструкция'),
-                    Tab(icon: Icon(Icons.content_paste_go_rounded, size: 18), text: 'Ответ ИИ'),
-                    Tab(icon: Icon(Icons.folder_copy_outlined, size: 18), text: 'Файлы проекта'),
-                    Tab(icon: Icon(Icons.rocket_launch_outlined, size: 18), text: 'Авто-деплой'),
-                  ],
-                  labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  unselectedLabelStyle: TextStyle(fontSize: 13),
-                  dividerColor: Colors.transparent,
-                ),
-              ],
+                  ),
+                  IconButton(
+                    tooltip: 'Переместить активную вкладку влево',
+                    onPressed: controller.index > 0
+                        ? () => provider.reorderTabs(controller.index, controller.index - 1)
+                        : null,
+                    icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                  ),
+                  IconButton(
+                    tooltip: 'Переместить активную вкладку вправо',
+                    onPressed: controller.index < order.length - 1
+                        ? () => provider.reorderTabs(controller.index, controller.index + 2)
+                        : null,
+                    icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: controller,
+            children: order.map(_bodyForTab).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WorkspaceTabItem extends StatelessWidget {
+  const _WorkspaceTabItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.isHoverTarget,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final bool isHoverTarget;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = Theme.of(context).colorScheme.primary;
+    final fgColor = selected ? activeColor : const Color(0xFF5A657A);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: isHoverTarget ? activeColor.withOpacity(0.06) : Colors.transparent,
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? activeColor : Colors.transparent,
+              width: 2.5,
             ),
           ),
-          const Expanded(
-            child: TabBarView(
-              children: [
-                _AgentTab(),
-                _ImportTab(),
-                _FilesTab(),
-                AutoDeployTab(),
-              ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: fgColor),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: fgColor,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

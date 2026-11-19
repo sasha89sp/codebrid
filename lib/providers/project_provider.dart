@@ -13,6 +13,7 @@ import '../services/file_writer.dart';
 import '../services/git_service.dart';
 import '../services/project_naming.dart';
 import '../services/response_parser.dart';
+import '../services/build_bundle_service.dart';
 import '../services/zip_deploy_service.dart';
 
 class ProjectProvider extends ChangeNotifier {
@@ -39,9 +40,12 @@ class ProjectProvider extends ChangeNotifier {
 
   String downloadsWatchPath = DownloadsWatcherService.defaultDownloadsPath();
   bool downloadsWatcherEnabled = false;
+  List<String> tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'];
   final List<String> deployLogs = <String>[];
   String? lastDeployStatus;
   GitStatusSummary? lastGitStatus;
+  String? pendingBuildZipPath;
+  String? pendingBuildSuggestedDir;
 
   AgentTemplateItem? get selectedTemplate {
     for (final template in templates) {
@@ -66,6 +70,19 @@ class ProjectProvider extends ChangeNotifier {
         downloadsWatchPath = settings.downloadsWatchPath!.trim();
       }
       downloadsWatcherEnabled = settings.downloadsWatcherEnabled;
+      if (settings.tabOrder.isNotEmpty) {
+        final allowed = const <String>['agent', 'import', 'files', 'auto_deploy'];
+        final normalized = <String>[];
+        for (final id in settings.tabOrder) {
+          if (allowed.contains(id) && !normalized.contains(id)) {
+            normalized.add(id);
+          }
+        }
+        for (final id in allowed) {
+          if (!normalized.contains(id)) normalized.add(id);
+        }
+        tabOrder = normalized;
+      }
 
       if (settings.lastProjectId != null) {
         currentProject = _findProject(settings.lastProjectId!);
@@ -249,7 +266,6 @@ class ProjectProvider extends ChangeNotifier {
     required String zipNameFilter,
     required bool deleteZipAfterDeploy,
     required bool cleanBeforeExtract,
-    bool autoSyncOnReject = true,
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -261,7 +277,6 @@ class ProjectProvider extends ChangeNotifier {
       zipNameFilter: zipNameFilter.trim(),
       deleteZipAfterDeploy: deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract,
-      autoSyncOnReject: autoSyncOnReject,
     );
     await storage.updateProject(updated);
     currentProject = updated;
@@ -297,13 +312,135 @@ class ProjectProvider extends ChangeNotifier {
     try {
       await _downloadsWatcher.start(
         directoryPath: downloadsWatchPath,
-        onZipReady: (String zipPath) => deployZipArchive(zipPath, fromWatcher: true),
+        onZipReady: (String zipPath) => _handleWatchedZip(zipPath),
       );
       _appendDeployLog('Мониторинг активен: $downloadsWatchPath');
     } catch (error) {
       downloadsWatcherEnabled = false;
       await storage.saveDownloadsWatcherSettings(downloadsWatcherEnabled: false);
       _appendDeployLog('Ошибка запуска мониторинга: $error');
+    }
+  }
+
+  Future<void> _handleWatchedZip(String zipPath) async {
+    final project = currentProject;
+    final fileName = p.basename(zipPath);
+    if (project != null && project.buildCaptureEnabled) {
+      final filter = project.buildZipFilter.trim();
+      final matchesFilter = filter.isEmpty ||
+          fileName.toLowerCase().contains(filter.toLowerCase());
+      if (matchesFilter) {
+        final baseBuildsDir = project.buildTargetDirectory.trim().isNotEmpty
+            ? project.buildTargetDirectory.trim()
+            : BuildBundleService.defaultBuildsRootDirectory(storage.dataDirectory);
+        if (project.buildAskTargetBeforeExtract) {
+          pendingBuildZipPath = zipPath;
+          pendingBuildSuggestedDir = baseBuildsDir;
+          _appendDeployLog('Перехвачен архив сборки: $fileName — ожидает выбора/подтверждения папки.');
+          notifyListeners();
+          return;
+        }
+        await applyBuildArchive(zipPath, customTargetDirectory: baseBuildsDir);
+        return;
+      }
+    }
+    await deployZipArchive(zipPath, fromWatcher: true);
+  }
+
+  Future<void> updateCurrentProjectBuildSettings({
+    required bool buildCaptureEnabled,
+    required bool buildAskTargetBeforeExtract,
+    required String buildTargetDirectory,
+    required String buildZipFilter,
+    required String buildPreservedFiles,
+  }) async {
+    final project = currentProject;
+    if (project == null) return;
+    final updated = project.copyWith(
+      buildCaptureEnabled: buildCaptureEnabled,
+      buildAskTargetBeforeExtract: buildAskTargetBeforeExtract,
+      buildTargetDirectory: buildTargetDirectory.trim(),
+      buildZipFilter: buildZipFilter.trim(),
+      buildPreservedFiles: buildPreservedFiles.trim(),
+    );
+    await storage.updateProject(updated);
+    currentProject = updated;
+    projects = projects.map((item) => item.id == updated.id ? updated : item).toList();
+    _appendDeployLog('Сохранены настройки перехвата сборок для «${updated.name}».');
+    notifyListeners();
+  }
+
+  Future<void> confirmPendingBuild({String? chosenTargetDirectory}) async {
+    final zipPath = pendingBuildZipPath;
+    if (zipPath == null) return;
+    pendingBuildZipPath = null;
+    pendingBuildSuggestedDir = null;
+    notifyListeners();
+    await applyBuildArchive(zipPath, customTargetDirectory: chosenTargetDirectory);
+  }
+
+  void dismissPendingBuild() {
+    pendingBuildZipPath = null;
+    pendingBuildSuggestedDir = null;
+    notifyListeners();
+  }
+
+  Future<void> applyBuildArchive(
+    String zipPath, {
+    String? customTargetDirectory,
+  }) async {
+    final project = currentProject;
+    if (project == null) {
+      _appendDeployLog('Пропущено (${p.basename(zipPath)}): не выбран активный проект.');
+      notifyListeners();
+      return;
+    }
+    if (isDeploying) {
+      _appendDeployLog('Пропущено (${p.basename(zipPath)}): уже выполняется обработка.');
+      notifyListeners();
+      return;
+    }
+
+    isDeploying = true;
+    errorMessage = null;
+    lastDeployStatus = 'Сборка новой версии из ${p.basename(zipPath)}...';
+    _appendDeployLog('--- Перехват скомпилированного архива: ${p.basename(zipPath)} ---');
+    notifyListeners();
+
+    try {
+      final preserved = project.buildPreservedFiles
+          .split(RegExp(r'[,\n;]'))
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      final buildsRoot = project.buildTargetDirectory.trim().isNotEmpty
+          ? project.buildTargetDirectory.trim()
+          : BuildBundleService.defaultBuildsRootDirectory(storage.dataDirectory);
+
+      final result = await BuildBundleService.applyDownloadedBuild(
+        zipPath: zipPath,
+        buildsRootDirectory: buildsRoot,
+        customTargetDirectory: customTargetDirectory,
+        preservedPatterns: preserved,
+      );
+
+      for (final line in result.logs) {
+        _appendDeployLog(line);
+      }
+      lastDeployStatus = result.message;
+      if (result.success) {
+        infoMessage = result.message;
+      } else {
+        errorMessage = result.message;
+      }
+    } catch (error) {
+      final msg = error is FormatException ? error.message : error.toString();
+      _appendDeployLog('Ошибка сборки версии: $msg');
+      lastDeployStatus = 'Ошибка: $msg';
+      errorMessage = msg;
+    } finally {
+      isDeploying = false;
+      notifyListeners();
     }
   }
 
@@ -403,7 +540,6 @@ class ProjectProvider extends ChangeNotifier {
         branch: project.gitBranch,
         commitMessage: 'Auto-deploy $fileName via CodeBridge Mini',
         push: true,
-        autoSyncOnReject: project.autoSyncOnReject,
       );
 
       for (final line in gitResult.logs) {
@@ -436,6 +572,24 @@ class ProjectProvider extends ChangeNotifier {
       isDeploying = false;
       notifyListeners();
     }
+  }
+
+  Future<void> reorderTabs(int oldIndex, int newIndex) async {
+    final list = List<String>.from(tabOrder);
+    if (oldIndex < 0 || oldIndex >= list.length) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= list.length) return;
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex, moved);
+    tabOrder = list;
+    await storage.saveTabOrder(tabOrder);
+    notifyListeners();
+  }
+
+  Future<void> resetTabOrder() async {
+    tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'];
+    await storage.saveTabOrder(tabOrder);
+    notifyListeners();
   }
 
   void clearDeployLogs() {

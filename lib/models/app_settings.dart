@@ -6,6 +6,7 @@ class AppSettings {
     this.selectedTemplateId,
     this.downloadsWatchPath,
     this.downloadsWatcherEnabled = false,
+    this.tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'],
   });
 
   final String? lastProjectId;
@@ -14,6 +15,7 @@ class AppSettings {
   final String? selectedTemplateId;
   final String? downloadsWatchPath;
   final bool downloadsWatcherEnabled;
+  final List<String> tabOrder;
 
   AppSettings copyWith({
     String? lastProjectId,
@@ -22,6 +24,7 @@ class AppSettings {
     String? selectedTemplateId,
     String? downloadsWatchPath,
     bool? downloadsWatcherEnabled,
+    List<String>? tabOrder,
     bool clearLastProject = false,
   }) {
     return AppSettings(
@@ -31,6 +34,7 @@ class AppSettings {
       selectedTemplateId: selectedTemplateId ?? this.selectedTemplateId,
       downloadsWatchPath: downloadsWatchPath ?? this.downloadsWatchPath,
       downloadsWatcherEnabled: downloadsWatcherEnabled ?? this.downloadsWatcherEnabled,
+      tabOrder: tabOrder ?? this.tabOrder,
     );
   }
 
@@ -41,6 +45,7 @@ class AppSettings {
         'selectedTemplateId': selectedTemplateId,
         'downloadsWatchPath': downloadsWatchPath,
         'downloadsWatcherEnabled': downloadsWatcherEnabled,
+        'tabOrder': tabOrder,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -51,6 +56,9 @@ class AppSettings {
       selectedTemplateId: json['selectedTemplateId'] as String?,
       downloadsWatchPath: json['downloadsWatchPath'] as String?,
       downloadsWatcherEnabled: json['downloadsWatcherEnabled'] == true,
+      tabOrder: (json['tabOrder'] is List)
+          ? (json['tabOrder'] as List).map((e) => e.toString()).toList()
+          : const <String>['agent', 'import', 'files', 'auto_deploy'],
     );
   }
 }

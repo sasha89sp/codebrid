@@ -15,7 +15,11 @@ class CodeProject {
     this.zipNameFilter = '',
     this.deleteZipAfterDeploy = false,
     this.cleanBeforeExtract = false,
-    this.autoSyncOnReject = true,
+    this.buildCaptureEnabled = false,
+    this.buildAskTargetBeforeExtract = false,
+    this.buildTargetDirectory = '',
+    this.buildZipFilter = '',
+    this.buildPreservedFiles = '',
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -40,7 +44,11 @@ class CodeProject {
   final String zipNameFilter;
   final bool deleteZipAfterDeploy;
   final bool cleanBeforeExtract;
-  final bool autoSyncOnReject;
+  final bool buildCaptureEnabled;
+  final bool buildAskTargetBeforeExtract;
+  final String buildTargetDirectory;
+  final String buildZipFilter;
+  final String buildPreservedFiles;
 
   CodeProject copyWith({
     String? name,
@@ -55,7 +63,11 @@ class CodeProject {
     String? zipNameFilter,
     bool? deleteZipAfterDeploy,
     bool? cleanBeforeExtract,
-    bool? autoSyncOnReject,
+    bool? buildCaptureEnabled,
+    bool? buildAskTargetBeforeExtract,
+    String? buildTargetDirectory,
+    String? buildZipFilter,
+    String? buildPreservedFiles,
   }) {
     return CodeProject(
       id: id,
@@ -73,7 +85,11 @@ class CodeProject {
       zipNameFilter: zipNameFilter ?? this.zipNameFilter,
       deleteZipAfterDeploy: deleteZipAfterDeploy ?? this.deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract ?? this.cleanBeforeExtract,
-      autoSyncOnReject: autoSyncOnReject ?? this.autoSyncOnReject,
+      buildCaptureEnabled: buildCaptureEnabled ?? this.buildCaptureEnabled,
+      buildAskTargetBeforeExtract: buildAskTargetBeforeExtract ?? this.buildAskTargetBeforeExtract,
+      buildTargetDirectory: buildTargetDirectory ?? this.buildTargetDirectory,
+      buildZipFilter: buildZipFilter ?? this.buildZipFilter,
+      buildPreservedFiles: buildPreservedFiles ?? this.buildPreservedFiles,
     );
   }
 
@@ -93,7 +109,11 @@ class CodeProject {
         'zipNameFilter': zipNameFilter,
         'deleteZipAfterDeploy': deleteZipAfterDeploy,
         'cleanBeforeExtract': cleanBeforeExtract,
-        'autoSyncOnReject': autoSyncOnReject,
+        'buildCaptureEnabled': buildCaptureEnabled,
+        'buildAskTargetBeforeExtract': buildAskTargetBeforeExtract,
+        'buildTargetDirectory': buildTargetDirectory,
+        'buildZipFilter': buildZipFilter,
+        'buildPreservedFiles': buildPreservedFiles,
       };
 
   factory CodeProject.fromJson(
@@ -120,7 +140,11 @@ class CodeProject {
       zipNameFilter: (json['zipNameFilter'] as String? ?? '').trim(),
       deleteZipAfterDeploy: json['deleteZipAfterDeploy'] == true,
       cleanBeforeExtract: json['cleanBeforeExtract'] == true,
-      autoSyncOnReject: json['autoSyncOnReject'] != false,
+      buildCaptureEnabled: json['buildCaptureEnabled'] == true,
+      buildAskTargetBeforeExtract: json['buildAskTargetBeforeExtract'] == true,
+      buildTargetDirectory: json['buildTargetDirectory']?.toString() ?? '',
+      buildZipFilter: json['buildZipFilter']?.toString() ?? '',
+      buildPreservedFiles: json['buildPreservedFiles']?.toString() ?? '',
     );
   }
 
