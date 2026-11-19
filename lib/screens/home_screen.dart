@@ -21,6 +21,7 @@ import '../services/window_size_listener.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
 import '../widgets/compact_app_menu.dart';
+import '../widgets/home_shortcuts.dart';
 import '../widgets/section_header.dart';
 
 Future<void> _openFolder(BuildContext context, String folderPath) async {
@@ -106,40 +107,12 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 10),
             ],
           ),
-          body: const Shortcuts(
-            shortcuts: <ShortcutActivator, Intent>{
-              const SingleActivator(LogicalKeyboardKey.keyN, control: true): const _NewProjectIntent(),
-              const SingleActivator(LogicalKeyboardKey.comma, control: true): const _OpenSettingsIntent(),
-              const SingleActivator(LogicalKeyboardKey.keyQ, control: true): const _QuitAppIntent(),
-            },
-            child: Actions(
-              actions: <Type, Action<Intent>>{
-                _NewProjectIntent: CallbackAction<_NewProjectIntent>(
-                  onInvoke: (_) {
-                    if (!provider.isWorking) {
-                      _showCreateProjectDialog(context, provider);
-                    }
-                    return null;
-                  },
-                ),
-                _OpenSettingsIntent: CallbackAction<_OpenSettingsIntent>(
-                  onInvoke: (_) {
-                    _showAboutDialog(context, provider);
-                    return null;
-                  },
-                ),
-                _QuitAppIntent: CallbackAction<_QuitAppIntent>(
-                  onInvoke: (_) {
-                    Future<void>(() async {
-                      await windowSizeListener?.saveNow();
-                      await provider.prepareForGracefulExit();
-                      exit(0);
-                    });
-                    return null;
-                  },
-                ),
-              },
-              child: provider.isLoading
+          body: HomeShortcutsWrapper(
+            provider: provider,
+            windowSizeListener: windowSizeListener,
+            onNewProject: _showCreateProjectDialog,
+            onOpenSettings: _showAboutDialog,
+                          child: provider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : Row(
                   children: [
@@ -152,8 +125,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            ),
+          ),
         );
       },
     );
@@ -2293,16 +2265,4 @@ String _fileSize(File file) {
   } catch (_) {
     return 'Размер неизвестен';
   }
-}
-
-class _NewProjectIntent extends Intent {
-  const _NewProjectIntent();
-}
-
-class _OpenSettingsIntent extends Intent {
-  const _OpenSettingsIntent();
-}
-
-class _QuitAppIntent extends Intent {
-  const _QuitAppIntent();
 }

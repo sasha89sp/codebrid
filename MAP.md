@@ -1,38 +1,45 @@
 # MAP.md (code_bridge_mini)
 
 ## Точка входа и UI
-- `lib/main.dart` — инициализация `AppStorage`, `SingleInstanceBridge` (приём `.zip` через CLI / «Открыть с помощью»), `window_manager`, `AppTrayService`, запуск `ProjectProvider` и `CodeBridgeMiniApp`.
+- `lib/main.dart` — инициализация `AppStorage`, `SingleInstanceBridge`, `WindowSizeListener`, `AppTrayService`, восстановление размеров и состояния окна (развёрнутое / полный экран), запуск `ProjectProvider` и `CodeBridgeMiniApp`.
 - `lib/app.dart` — `CodeBridgeMiniApp` (Material 3 тема, корневой `HomeScreen`).
-- `lib/screens/home_screen.dart` — основной экран с 4 вкладками: Инструкция, Ответ ИИ, Файлы проекта, Авто-деплой.
-- `lib/widgets/auto_deploy_tab.dart` — вкладка «Авто-деплой»: фоновый мониторинг `Downloads`, настройки Git/GitHub проекта, ручной выбор `.zip` и журнал деплоя.
-- `lib/widgets/section_header.dart` — переиспользуемый заголовок секции.
+- `lib/screens/home_screen.dart` — главный экран, горячие клавиши (`Ctrl+N`, `Ctrl+,`, `Ctrl+Q`), боковая панель проектов, синхронизация вкладок и рабочее пространство проекта.
+- `lib/widgets/compact_app_menu.dart` — тёмное каскадное меню с подменю (`Файл`, `Деплой и сборки`, `Бэкап и настройки`, `Окно`), статусами и настройками.
+- `lib/widgets/auto_deploy_tab.dart` — вкладка «Авто-деплой»: мониторинг «Загрузок», настройки Git/GitHub, папка версий ZIP, ручной выбор `.zip` и журнал деплоя.
+- `lib/widgets/build_capture_tab.dart` — вкладка «Распаковка сборок»: перехват и распаковка `.zip` сборок в `_history` и `current`, сохранение файлов, автопроверка/автоскачивание с GitHub.
+- `lib/widgets/section_header.dart` — заголовок секции.
 
 ## Состояние (`lib/providers/`)
-- `project_provider.dart` — `ProjectProvider` (`ChangeNotifier`): управление проектами, шаблонами (`flutter-monorepo-agents`), генерацией `agent.md`, разбором ответов, фоновым мониторингом `Downloads` и пайплайном `deployZipArchive` (проверка ZIP -> распаковка -> `git push`).
+- `project_provider.dart` — `ProjectProvider` (`ChangeNotifier`): управление проектами, шаблонами, генерацией инструкций, разбором ответов, мониторингом «Загрузок», авто-деплоем, распаковкой сборок, фоновым опросом сборок GitHub и бэкапами.
 
 ## Модели (`lib/models/`)
-- `code_project.dart` — `CodeProject` (id, display name, packageName, пути, templateId, настройки авто-деплоя: `gitRepoUrl`, `gitBranch`, `autoDeployEnabled`, `zipNameFilter`, `deleteZipAfterDeploy`, `cleanBeforeExtract`).
-- `agent_template_item.dart` — `AgentTemplateItem` (id, name, content, isBuiltIn).
-- `generated_file.dart` — `GeneratedFile` (path, content, isFragment, selected, sourceFormat, note).
-- `app_settings.dart` — `AppSettings` (lastProjectId, windowWidth, windowHeight, selectedTemplateId, downloadsWatchPath, downloadsWatcherEnabled).
+- `code_project.dart` — `CodeProject` (метаданные проекта, пути, настройки авто-деплоя, перехвата/распаковки сборок и автопроверки с GitHub).
+- `app_settings.dart` — `AppSettings` (последний проект, размеры и состояние окна, шаблоны, мониторинг «Загрузок», порядок и активная вкладка, GitHub токен/владелец, бэкапы, сохраняемые источники сборок GitHub).
+- `agent_template_item.dart` — `AgentTemplateItem`.
+- `generated_file.dart` — `GeneratedFile`.
 
 ## Сервисы (`lib/services/`)
-- `zip_deploy_service.dart` — `ZipDeployService`: инспекция ZIP (маркеры `pubspec.yaml` / `AGENTS.md`, защита от Zip Slip, снятие одиночной корневой папки) и распаковка с сохранением `.git/`.
-- `git_service.dart` — `GitService`: проверка Git, `git init` / настройка `origin`, `git add -A`, `git commit`, `git push -u origin <branch>` через локальный `git`.
-- `downloads_watcher_service.dart` — `DownloadsWatcherService`: фоновый перехват новых `.zip` в `Downloads` с ожиданием окончания загрузки и дедупликацией.
-- `single_instance_bridge.dart` — `SingleInstanceBridge`: локальный loopback IPC (`data/ipc_port.txt`) для передачи `.zip` уже запущенному окну при «Открыть с помощью -> code_bridge_mini.exe».
-- `agent_template.dart` — `AgentTemplate`: встроенные шаблоны (включая `flutter-monorepo-agents`) и рендер переменных.
-- `app_storage.dart` — `AppStorage`: локальное хранение в `data/` (`settings.json`, `projects/`, `templates/index.json`).
-- `files_to_prompt.dart` — `FilesToPrompt`: сбор файлов/каталогов в промпт с фильтрацией `build/`, `.dart_tool/`, `ephemeral/`, `*.g.dart`, `*.freezed.dart`, `*.gr.dart`.
-- `response_parser.dart` — `ResponseParser`: разбор ответов ИИ (`<<<FILE>>>` и Markdown-блоки).
-- `file_writer.dart` — `FileWriter`: безопасная локальная запись UTF-8/LF и слияние фрагментов `pubspec.yaml`.
-- `project_naming.dart` — `ProjectNaming`: транслитерация имён проектов в Dart package slug.
-- `app_tray_service.dart` — `AppTrayService`, `AppWindowCloseListener`: сворачивание в трей Windows.
-- `window_size_listener.dart` — `WindowSizeListener`: сохранение размеров окна.
+- `github_build_fetcher_service.dart` — `GitHubBuildFetcherService`: проверка успешных прогонов workflow / артефактов и релизов на GitHub с учётом фильтра и скачивание `.zip`.
+- `build_bundle_service.dart` — `BuildBundleService`: сохранение предыдущей сборки в `_history`, оверлей/сохраняемые файлы и распаковка новой сборки в `current`.
+- `zip_deploy_service.dart` — `ZipDeployService`: проверка и распаковка проектных `.zip` с сохранением `.git/`.
+- `git_service.dart` — `GitService`: локальные операции Git (`init`, `remote`, `commit`, `push`, автосинхронизация при отказе).
+- `github_repo_service.dart` — `GitHubRepoService`: создание и подключение репозиториев на GitHub.
+- `backup_service.dart` — `BackupService`: создание и восстановление полных бэкапов данных проекта.
+- `downloads_watcher_service.dart` — `DownloadsWatcherService`: фоновый мониторинг папки «Загрузок».
+- `single_instance_bridge.dart` — `SingleInstanceBridge`: локальный IPC для передачи `.zip` запущенному экземпляру.
+- `agent_template.dart` — `AgentTemplate`: шаблоны инструкций и рендер переменных.
+- `app_storage.dart` — `AppStorage`: хранение настроек, проектов и шаблонов в каталоге данных.
+- `app_version.dart` — `AppVersion` и `ReleaseEntry`: текущая версия и история релизов.
+- `files_to_prompt.dart` — `FilesToPrompt`: сбор файлов проекта в текст для ИИ.
+- `response_parser.dart` — `ResponseParser`: разбор ответов ИИ.
+- `file_writer.dart` — `FileWriter`: запись файлов и слияние фрагментов `pubspec.yaml`.
+- `project_naming.dart` — `ProjectNaming`: формирование имени пакета.
+- `app_tray_service.dart` — `AppTrayService`, `AppWindowCloseListener`: системный трей Windows и сохранение состояния при закрытии/выходе.
+- `window_size_listener.dart` — `WindowSizeListener`: отслеживание и сохранение размеров и состояния окна.
 
 ## Тесты (`test/`)
-- `agent_template_test.dart` — встроенный шаблон `AGENTS.md` и рендер переменных.
-- `files_to_prompt_test.dart` — экспорт файлов и фильтрация сгенерированного кода/каталогов.
-- `project_naming_test.dart` — генерация package slug.
-- `response_parser_test.dart` — парсинг форматов ответов ИИ.
-- `zip_deploy_service_test.dart` — проверка ZIP, снятие корневой папки, защита от path traversal, сохранение `.git/`.
+- `agent_template_test.dart`
+- `files_to_prompt_test.dart`
+- `project_naming_test.dart`
+- `response_parser_test.dart`
+- `zip_deploy_service_test.dart`

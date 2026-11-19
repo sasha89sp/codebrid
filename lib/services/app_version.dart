@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.35';
-  static const int currentBuildNumber = 35;
+  static const String currentVersion = '2.1.36';
+  static const int currentBuildNumber = 36;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.36',
+      buildNumber: 36,
+      title: 'Обновлены AGENTS.md, ROOT_MAP.md, MAP.md и вынесены горячие клавиши из home_screen.dart',
+      summary: 'Актуализированы правила разработки и карты проекта, а блок горячих клавиш вынесен в отдельный модуль lib/widgets/home_shortcuts.dart для разгрузки home_screen.dart.',
+      changes: [
+        'Обновлены AGENTS.md, ROOT_MAP.md и MAP.md под актуальную архитектуру и процесс сборки',
+        'Вынесен HomeShortcutsWrapper в lib/widgets/home_shortcuts.dart для уменьшения размера home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.35',
       buildNumber: 35,

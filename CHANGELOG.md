@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.36+36
+- Обновлены `AGENTS.md`, `ROOT_MAP.md` и `MAP.md`, а горячие клавиши вынесены в отдельный виджет `lib/widgets/home_shortcuts.dart` для снижения разрастания `lib/screens/home_screen.dart`.
+
 ## 2.1.35+35
 - Исправлены ошибки и подсказки анализатора в `lib/models/app_settings.dart` (лишний `);` в `AppSettings.fromJson`) и `lib/screens/home_screen.dart` (`unawaited`, `const Shortcuts` и выход по `Ctrl+Q`).
 
