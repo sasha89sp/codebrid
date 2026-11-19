@@ -11,10 +11,30 @@ import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../providers/project_provider.dart';
+import '../services/build_bundle_service.dart';
 import '../services/files_to_prompt.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
 import '../widgets/section_header.dart';
+
+Future<void> _openFolder(BuildContext context, String folderPath) async {
+  try {
+    final dir = Directory(folderPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    if (Platform.isWindows) {
+      await Process.run('explorer.exe', <String>[p.normalize(dir.absolute.path)]);
+    } else if (Platform.isMacOS) {
+      await Process.run('open', <String>[dir.absolute.path]);
+    } else {
+      await Process.run('xdg-open', <String>[dir.absolute.path]);
+    }
+  } catch (error) {
+    if (!context.mounted) return;
+    _showSnack(context, 'Не удалось открыть папку: $error');
+  }
+}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -326,10 +346,29 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
                       ],
                     ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () => _openFolder(context, project.outputPath),
-                    icon: const Icon(Icons.folder_open_outlined, size: 17),
-                    label: const Text('Открыть папку'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _openFolder(context, project.outputPath),
+                        icon: const Icon(Icons.folder_open_outlined, size: 17),
+                        label: const Text('Открыть папку'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          final buildDir = BuildBundleService.currentBuildDirectory(
+                            dataDirectory: provider.storage.dataDirectory,
+                            buildTargetDirectory: project.buildTargetDirectory,
+                            packageName: project.packageName,
+                            lastArchiveName: provider.lastBuildArchiveName,
+                          );
+                          _openFolder(context, buildDir);
+                        },
+                        icon: const Icon(Icons.inventory_2_outlined, size: 17),
+                        label: const Text('Открыть сборку'),
+                      ),
+                    ],
                   ),
                 ],
               ),

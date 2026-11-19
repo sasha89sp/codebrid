@@ -24,6 +24,48 @@ class BuildBundleService {
     return p.join(dataDirectory, 'builds');
   }
 
+  static String currentBuildDirectory({
+    required String dataDirectory,
+    required String buildTargetDirectory,
+    required String packageName,
+    String? lastArchiveName,
+  }) {
+    final trimmedTarget = buildTargetDirectory.trim();
+    if (trimmedTarget.isNotEmpty) {
+      final normTarget = p.normalize(trimmedTarget);
+      if (p.basename(normTarget).toLowerCase() == 'current') {
+        return normTarget;
+      }
+      if (lastArchiveName != null && lastArchiveName.trim().isNotEmpty) {
+        final baseName = _sanitizeFolderName(
+          lastArchiveName.toLowerCase().endsWith('.zip')
+              ? lastArchiveName.substring(0, lastArchiveName.length - 4)
+              : lastArchiveName,
+        );
+        final candidate = p.normalize(p.join(normTarget, baseName, 'current'));
+        if (Directory(candidate).existsSync()) {
+          return candidate;
+        }
+      }
+      return p.normalize(p.join(normTarget, 'current'));
+    }
+
+    final buildsRoot = defaultBuildsRootDirectory(dataDirectory);
+    if (lastArchiveName != null && lastArchiveName.trim().isNotEmpty) {
+      final baseName = _sanitizeFolderName(
+        lastArchiveName.toLowerCase().endsWith('.zip')
+            ? lastArchiveName.substring(0, lastArchiveName.length - 4)
+            : lastArchiveName,
+      );
+      final candidate = p.normalize(p.join(buildsRoot, baseName, 'current'));
+      if (Directory(candidate).existsSync()) {
+        return candidate;
+      }
+    }
+
+    return p.normalize(p.join(buildsRoot, _sanitizeFolderName(packageName), 'current'));
+  }
+
   static Future<BuildBundleResult> applyDownloadedBuild({
     required String zipPath,
     required String buildsRootDirectory,

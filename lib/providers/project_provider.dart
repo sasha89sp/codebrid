@@ -46,6 +46,7 @@ class ProjectProvider extends ChangeNotifier {
   GitStatusSummary? lastGitStatus;
   String? pendingBuildZipPath;
   String? pendingBuildSuggestedDir;
+  String? lastBuildArchiveName;
 
   AgentTemplateItem? get selectedTemplate {
     for (final template in templates) {
@@ -441,6 +442,7 @@ class ProjectProvider extends ChangeNotifier {
           ? project.buildTargetDirectory.trim()
           : BuildBundleService.defaultBuildsRootDirectory(storage.dataDirectory);
 
+      lastBuildArchiveName = p.basename(zipPath);
       final result = await BuildBundleService.applyDownloadedBuild(
         zipPath: zipPath,
         buildsRootDirectory: buildsRoot,
