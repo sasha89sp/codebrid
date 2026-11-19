@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.18';
-  static const int currentBuildNumber = 18;
+  static const String currentVersion = '2.1.19';
+  static const int currentBuildNumber = 19;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.19',
+      buildNumber: 19,
+      title: 'Исправлены ошибки и замечания flutter analyze в Build portable Windows x64',
+      summary: 'Устранены дублирующий импорт, неопределённый идентификатор AgentTemplate и подсказки prefer_const.',
+      changes: [
+        'Удалён дублирующий импорт dart:io и добавлен импорт agent_template.dart в project_provider.dart',
+        'Исправлены замечания prefer_const в lib/screens/home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.18',
       buildNumber: 18,

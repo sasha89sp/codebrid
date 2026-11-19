@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -8,6 +7,7 @@ import 'package:path/path.dart' as p;
 import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
 import '../models/generated_file.dart';
+import '../services/agent_template.dart';
 import '../services/app_storage.dart';
 import '../services/backup_service.dart';
 import '../services/downloads_watcher_service.dart';

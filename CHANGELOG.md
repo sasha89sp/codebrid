@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.19+19
+- Исправлены ошибки анализатора в `lib/providers/project_provider.dart` (`duplicate_import`, `undefined_identifier` для `AgentTemplate`) и замечания `prefer_const` в `lib/screens/home_screen.dart`.
+
 ## 2.1.18+18
 - В `ProjectProvider` при загрузке и нормализации `tabOrder` из `settings.json` добавлен идентификатор `build_capture`, из-за отсутствия которого вкладка «Распаковка сборок» отсеивалась при старте.
 

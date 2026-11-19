@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 11),
                 const Text('CodeBridge Mini', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(width: 10),
-                Text(AppVersion.currentVersion, style: const TextStyle(color: Color(0xFF8B93A4), fontSize: 12)),
+                const Text(AppVersion.currentVersion, style: TextStyle(color: Color(0xFF8B93A4), fontSize: 12)),
               ],
             ),
             actions: [
@@ -1895,7 +1895,7 @@ Future<void> _showAboutDialog(BuildContext context, ProjectProvider provider) as
               children: [
                 const Icon(Icons.info_outline_rounded, size: 22),
                 const SizedBox(width: 8),
-                Text('CodeBridge Mini — v${AppVersion.fullVersion}'),
+                const Text('CodeBridge Mini — v${AppVersion.fullVersion}'),
               ],
             ),
             content: SizedBox(
