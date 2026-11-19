@@ -146,13 +146,135 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _ProjectSidebar extends StatelessWidget {
+class _ProjectSidebar extends StatefulWidget {
   const _ProjectSidebar({required this.provider});
 
   final ProjectProvider provider;
 
   @override
+  State<_ProjectSidebar> createState() => _ProjectSidebarState();
+}
+
+class _ProjectSidebarState extends State<_ProjectSidebar> {
+  bool _showingTrash = false;
+
+  Future<void> _confirmDeleteForever(BuildContext context, CodeProject project) async {
+    var deleteExternal = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setLocalState) {
+            return AlertDialog(
+              title: const Text('Удалить проект навсегда?'),
+              content: SizedBox(
+                width: 440,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Проект «${project.name}» будет удалён из списка и из каталога данных приложения без возможности восстановления.',
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: deleteExternal,
+                      onChanged: (v) => setLocalState(() => deleteExternal = v ?? false),
+                      title: const Text(
+                        'Также удалить внешнюю папку кода/сборок на диске',
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Отмена'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Удалить навсегда'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmed == true && mounted) {
+      await widget.provider.deleteProjectForever(
+        project,
+        deleteExternalSourceFolder: deleteExternal,
+      );
+    }
+  }
+
+  Future<void> _confirmEmptyTrash(BuildContext context) async {
+    final trashed = widget.provider.trashedProjects;
+    if (trashed.isEmpty) return;
+    var deleteExternal = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setLocalState) {
+            return AlertDialog(
+              title: const Text('Очистить корзину проектов?'),
+              content: SizedBox(
+                width: 440,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Будет удалено проектов навсегда: ${trashed.length}.',
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: deleteExternal,
+                      onChanged: (v) => setLocalState(() => deleteExternal = v ?? false),
+                      title: const Text(
+                        'Также удалить внешние папки кода/сборок на диске',
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Отмена'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Очистить корзину'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmed == true && mounted) {
+      await widget.provider.emptyProjectsTrash(
+        deleteExternalSourceFolder: deleteExternal,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final provider = widget.provider;
+    final activeList = provider.activeProjects;
+    final trashedList = provider.trashedProjects;
+
     return Container(
       width: 276,
       color: Colors.white,
@@ -161,39 +283,92 @@ class _ProjectSidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FilledButton.icon(
-            onPressed: provider.isWorking ? null : () => showCreateProjectDialog(context, provider),
+            onPressed: provider.isWorking
+                ? null
+                : () {
+                    setState(() => _showingTrash = false);
+                    showCreateProjectDialog(context, provider);
+                  },
             icon: const Icon(Icons.add_rounded, size: 19),
             label: const Text('Новый проект'),
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           ),
-          const SizedBox(height: 25),
-          const Padding(
-            padding: EdgeInsets.only(left: 8, bottom: 10),
-            child: Text('МОИ ПРОЕКТЫ', style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w700, color: Color(0xFF939BAD))),
-          ),
-          Expanded(
-            child: provider.projects.isEmpty
-                ? const Center(child: Text('Пока нет проектов', style: TextStyle(color: Color(0xFF929AAC))))
-                : ListView.separated(
-                    itemCount: provider.projects.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 4),
-                    itemBuilder: (context, index) {
-                      final project = provider.projects[index];
-                      final selected = provider.currentProject?.id == project.id;
-                      return _ProjectTile(
-                        project: project,
-                        selected: selected,
-                        onTap: () => provider.selectProject(project),
-                      );
-                    },
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => setState(() => _showingTrash = false),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    child: Text(
+                      'МОИ ПРОЕКТЫ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 1.0,
+                        fontWeight: FontWeight.w700,
+                        color: !_showingTrash
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF939BAD),
+                      ),
+                    ),
                   ),
+                ),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(() => _showingTrash = !_showingTrash),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _showingTrash ? const Color(0xFFEEF1FF) : const Color(0xFFF4F6FA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.delete_outline_rounded,
+                        size: 14,
+                        color: _showingTrash
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF7D879B),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Корзина (${trashedList.length})',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _showingTrash
+                              ? Theme.of(context).colorScheme.primary
+                              : const Color(0xFF697388),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _showingTrash
+                ? _buildTrashList(context, provider, trashedList)
+                : _buildActiveList(context, provider, activeList),
           ),
           const Divider(color: Color(0xFFE7EAF1)),
           const Row(
             children: [
               Icon(Icons.usb_rounded, size: 17, color: Color(0xFF78849A)),
               SizedBox(width: 8),
-              Expanded(child: Text('Портативный режим', style: TextStyle(fontSize: 12, color: Color(0xFF78849A)))),
+              Expanded(
+                child: Text(
+                  'Портативный режим',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF78849A)),
+                ),
+              ),
               Icon(Icons.check_circle, size: 16, color: Color(0xFF31A477)),
             ],
           ),
@@ -201,14 +376,181 @@ class _ProjectSidebar extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildActiveList(
+    BuildContext context,
+    ProjectProvider provider,
+    List<CodeProject> activeList,
+  ) {
+    if (activeList.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Нет активных проектов',
+                style: TextStyle(color: Color(0xFF929AAC)),
+              ),
+              if (provider.trashedProjects.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => setState(() => _showingTrash = true),
+                  child: Text('Открыть корзину (${provider.trashedProjects.length})'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
+      itemCount: activeList.length,
+      onReorder: (int oldIndex, int newIndex) {
+        unawaited(provider.moveActiveProject(oldIndex, newIndex));
+      },
+      itemBuilder: (context, index) {
+        final project = activeList[index];
+        final selected = provider.currentProject?.id == project.id;
+        return Padding(
+          key: ValueKey(project.id),
+          padding: const EdgeInsets.only(bottom: 4),
+          child: _ProjectTile(
+            project: project,
+            selected: selected,
+            index: index,
+            totalCount: activeList.length,
+            onTap: () => provider.selectProject(project),
+            onMoveUp: index > 0
+                ? () => unawaited(provider.moveActiveProjectStep(project.id, -1))
+                : null,
+            onMoveDown: index < activeList.length - 1
+                ? () => unawaited(provider.moveActiveProjectStep(project.id, 1))
+                : null,
+            onMoveToTrash: () => unawaited(provider.moveProjectToTrash(project)),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTrashList(
+    BuildContext context,
+    ProjectProvider provider,
+    List<CodeProject> trashedList,
+  ) {
+    if (trashedList.isEmpty) {
+      return const Center(
+        child: Text(
+          'Корзина пуста',
+          style: TextStyle(color: Color(0xFF929AAC)),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => unawaited(_confirmEmptyTrash(context)),
+            icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+            label: const Text('Очистить корзину', style: TextStyle(fontSize: 12)),
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            itemCount: trashedList.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (context, index) {
+              final item = trashedList[index];
+              final dateLabel = _formatDate(item.trashedAt ?? item.createdAt);
+              return Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFD),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE4E9F2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        color: Color(0xFF273149),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'В корзине: $dateLabel',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF8C95A7)),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () => unawaited(provider.restoreProjectFromTrash(item)),
+                          icon: const Icon(Icons.restore_rounded, size: 15),
+                          label: const Text('Восстановить', style: TextStyle(fontSize: 11.5)),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            foregroundColor: const Color(0xFFB91C1C),
+                          ),
+                          onPressed: () => unawaited(_confirmDeleteForever(context, item)),
+                          child: const Text('Удалить', style: TextStyle(fontSize: 11.5)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _ProjectTile extends StatelessWidget {
-  const _ProjectTile({required this.project, required this.selected, required this.onTap});
+  const _ProjectTile({
+    required this.project,
+    required this.selected,
+    required this.index,
+    required this.totalCount,
+    required this.onTap,
+    required this.onMoveToTrash,
+    this.onMoveUp,
+    this.onMoveDown,
+  });
 
   final CodeProject project;
   final bool selected;
+  final int index;
+  final int totalCount;
   final VoidCallback onTap;
+  final VoidCallback onMoveToTrash;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   @override
   Widget build(BuildContext context) {
@@ -219,22 +561,99 @@ class _ProjectTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           child: Row(
             children: [
-              Icon(Icons.folder_rounded, size: 19, color: selected ? Theme.of(context).colorScheme.primary : const Color(0xFF929BAD)),
-              const SizedBox(width: 10),
+              ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    size: 16,
+                    color: Color(0xFFB0B8C8),
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.folder_rounded,
+                size: 19,
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : const Color(0xFF929BAD),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(project.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: const Color(0xFF273149))),
-                    const SizedBox(height: 3),
-                    Text(_formatDate(project.createdAt), style: const TextStyle(fontSize: 11, color: Color(0xFF8C95A7))),
+                    Text(
+                      project.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        color: const Color(0xFF273149),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(project.createdAt),
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF8C95A7)),
+                    ),
                   ],
                 ),
               ),
-              if (selected) Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.primary, size: 18),
+              PopupMenuButton<String>(
+                tooltip: 'Действия с проектом',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                icon: const Icon(Icons.more_vert_rounded, size: 17, color: Color(0xFF8C95A7)),
+                onSelected: (String action) {
+                  if (action == 'up') {
+                    onMoveUp?.call();
+                  } else if (action == 'down') {
+                    onMoveDown?.call();
+                  } else if (action == 'trash') {
+                    onMoveToTrash();
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'up',
+                    enabled: onMoveUp != null,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('Переместить вверх'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'down',
+                    enabled: onMoveDown != null,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.arrow_downward_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('Переместить вниз'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem<String>(
+                    value: 'trash',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFB91C1C)),
+                        SizedBox(width: 8),
+                        Text('В корзину', style: TextStyle(color: Color(0xFFB91C1C))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -429,6 +848,26 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
                         },
                         icon: const Icon(Icons.inventory_2_outlined, size: 17),
                         label: const Text('Открыть сборку'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final buildDir = BuildBundleService.currentBuildDirectory(
+                            dataDirectory: provider.storage.dataDirectory,
+                            buildTargetDirectory: project.buildTargetDirectory,
+                            packageName: project.packageName,
+                            lastArchiveName: provider.lastBuildArchiveName,
+                          );
+                          final res = await BuildBundleService.launchBuildExe(
+                            buildDirectory: buildDir,
+                            preferredPackageName: project.packageName,
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res.message)),
+                          );
+                        },
+                        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                        label: const Text('Запустить .exe'),
                       ),
                     ],
                   ),

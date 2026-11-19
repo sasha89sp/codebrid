@@ -114,8 +114,21 @@ class ProjectProvider extends ChangeNotifier {
   Future<void> initialize() async {
     try {
       templates = await storage.loadTemplates();
-      projects = await storage.loadProjects();
+      final loadedProjects = await storage.loadProjects();
       final settings = await storage.loadSettings();
+      if (settings.projectOrder.isNotEmpty) {
+        final orderMap = <String, int>{
+          for (var i = 0; i < settings.projectOrder.length; i++)
+            settings.projectOrder[i]: i,
+        };
+        loadedProjects.sort((a, b) {
+          final ia = orderMap[a.id] ?? 1 << 20;
+          final ib = orderMap[b.id] ?? 1 << 20;
+          if (ia != ib) return ia.compareTo(ib);
+          return b.createdAt.compareTo(a.createdAt);
+        });
+      }
+      projects = loadedProjects;
       if (settings.selectedTemplateId != null &&
           templates.any((item) => item.id == settings.selectedTemplateId)) {
         selectedTemplateId = settings.selectedTemplateId!;
@@ -168,10 +181,14 @@ class ProjectProvider extends ChangeNotifier {
         tabOrder = normalized;
       }
 
+      final activeList = activeProjects;
       if (settings.lastProjectId != null) {
-        currentProject = _findProject(settings.lastProjectId!);
+        final candidate = _findProject(settings.lastProjectId!);
+        if (candidate != null && !candidate.isTrashed) {
+          currentProject = candidate;
+        }
       }
-      currentProject ??= projects.isNotEmpty ? projects.first : null;
+      currentProject ??= activeList.isNotEmpty ? activeList.first : null;
       if (currentProject != null) {
         await _loadCurrentProjectDetails();
         await storage.saveLastProject(currentProject!.id);
@@ -205,6 +222,136 @@ class ProjectProvider extends ChangeNotifier {
       if (project.id == id) return project;
     }
     return null;
+  }
+
+  List<CodeProject> get activeProjects =>
+      projects.where((p) => !p.isTrashed).toList(growable: false);
+
+  List<CodeProject> get trashedProjects {
+    final list = projects.where((p) => p.isTrashed).toList();
+    list.sort((a, b) {
+      final da = a.trashedAt ?? a.createdAt;
+      final db = b.trashedAt ?? b.createdAt;
+      return db.compareTo(da);
+    });
+    return list;
+  }
+
+  Future<void> _persistOrder() async {
+    await storage.saveProjectOrder(projects.map((p) => p.id).toList());
+  }
+
+  Future<void> moveActiveProject(int oldIndex, int newIndex) async {
+    final active = List<CodeProject>.from(activeProjects);
+    if (oldIndex < 0 || oldIndex >= active.length) return;
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target < 0 || target >= active.length || target == oldIndex) return;
+
+    final moved = active.removeAt(oldIndex);
+    active.insert(target, moved);
+
+    final trashed = projects.where((p) => p.isTrashed).toList();
+    projects = <CodeProject>[...active, ...trashed];
+    await _persistOrder();
+    notifyListeners();
+  }
+
+  Future<void> moveActiveProjectStep(String projectId, int delta) async {
+    final active = activeProjects;
+    final idx = active.indexWhere((p) => p.id == projectId);
+    if (idx < 0) return;
+    final dest = idx + delta;
+    if (dest < 0 || dest >= active.length) return;
+    final insertAt = delta > 0 ? dest + 1 : dest;
+    await moveActiveProject(idx, insertAt);
+  }
+
+  Future<void> moveProjectToTrash(CodeProject project) async {
+    if (project.isTrashed) return;
+    final updated = project.copyWith(
+      isTrashed: true,
+      trashedAt: DateTime.now(),
+    );
+    await storage.updateProject(updated);
+    projects = projects.map((item) => item.id == updated.id ? updated : item).toList();
+    await _persistOrder();
+
+    if (currentProject?.id == project.id) {
+      final remainingActive = activeProjects;
+      currentProject = remainingActive.isNotEmpty ? remainingActive.first : null;
+      await storage.saveLastProject(currentProject?.id);
+      if (currentProject != null) {
+        await _loadCurrentProjectDetails();
+      } else {
+        agentContent = '';
+        outputFiles = <FileSystemEntity>[];
+        currentProjectNotes = const ProjectNotesStore();
+      }
+    }
+    infoMessage = 'Проект «${project.name}» перемещён в корзину.';
+    notifyListeners();
+  }
+
+  Future<void> restoreProjectFromTrash(CodeProject project) async {
+    if (!project.isTrashed) return;
+    final updated = project.copyWith(
+      isTrashed: false,
+      clearTrashedAt: true,
+    );
+    await storage.updateProject(updated);
+    projects = projects.map((item) => item.id == updated.id ? updated : item).toList();
+    await _persistOrder();
+
+    currentProject ??= updated;
+    if (currentProject?.id == updated.id) {
+      await storage.saveLastProject(updated.id);
+      await _loadCurrentProjectDetails();
+    }
+    infoMessage = 'Проект «${project.name}» восстановлен из корзины.';
+    notifyListeners();
+  }
+
+  Future<void> deleteProjectForever(
+    CodeProject project, {
+    bool deleteExternalSourceFolder = false,
+  }) async {
+    await storage.deleteProjectPermanently(
+      project,
+      deleteExternalSourceFolder: deleteExternalSourceFolder,
+    );
+    projects = projects.where((item) => item.id != project.id).toList();
+    await _persistOrder();
+
+    if (currentProject?.id == project.id) {
+      final remainingActive = activeProjects;
+      currentProject = remainingActive.isNotEmpty ? remainingActive.first : null;
+      await storage.saveLastProject(currentProject?.id);
+      if (currentProject != null) {
+        await _loadCurrentProjectDetails();
+      } else {
+        agentContent = '';
+        outputFiles = <FileSystemEntity>[];
+        currentProjectNotes = const ProjectNotesStore();
+      }
+    }
+    infoMessage = 'Проект «${project.name}» удалён навсегда.';
+    notifyListeners();
+  }
+
+  Future<void> emptyProjectsTrash({bool deleteExternalSourceFolder = false}) async {
+    final items = List<CodeProject>.from(trashedProjects);
+    for (final item in items) {
+      await storage.deleteProjectPermanently(
+        item,
+        deleteExternalSourceFolder: deleteExternalSourceFolder,
+      );
+    }
+    final trashedIds = items.map((e) => e.id).toSet();
+    projects = projects.where((p) => !trashedIds.contains(p.id)).toList();
+    await _persistOrder();
+    infoMessage = 'Корзина проектов очищена.';
+    notifyListeners();
   }
 
   String packageNameFor(String projectName) => ProjectNaming.packageName(projectName);

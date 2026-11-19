@@ -31,6 +31,8 @@ class CodeProject {
     this.buildAutoFetchIntervalMinutes = 5,
     this.buildAutoLaunchExe = false,
     this.buildHistoryKeepCount = 10,
+    this.isTrashed = false,
+    this.trashedAt,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -71,6 +73,8 @@ class CodeProject {
   final int buildAutoFetchIntervalMinutes;
   final bool buildAutoLaunchExe;
   final int buildHistoryKeepCount;
+  final bool isTrashed;
+  final DateTime? trashedAt;
 
   CodeProject copyWith({
     String? name,
@@ -101,6 +105,9 @@ class CodeProject {
     int? buildAutoFetchIntervalMinutes,
     bool? buildAutoLaunchExe,
     int? buildHistoryKeepCount,
+    bool? isTrashed,
+    DateTime? trashedAt,
+    bool clearTrashedAt = false,
   }) {
     return CodeProject(
       id: id,
@@ -134,6 +141,8 @@ class CodeProject {
       buildAutoFetchIntervalMinutes: buildAutoFetchIntervalMinutes ?? this.buildAutoFetchIntervalMinutes,
       buildAutoLaunchExe: buildAutoLaunchExe ?? this.buildAutoLaunchExe,
       buildHistoryKeepCount: buildHistoryKeepCount ?? this.buildHistoryKeepCount,
+      isTrashed: isTrashed ?? this.isTrashed,
+      trashedAt: clearTrashedAt ? null : (trashedAt ?? this.trashedAt),
     );
   }
 
@@ -169,6 +178,8 @@ class CodeProject {
         'buildAutoFetchIntervalMinutes': buildAutoFetchIntervalMinutes,
         'buildAutoLaunchExe': buildAutoLaunchExe,
         'buildHistoryKeepCount': buildHistoryKeepCount,
+        'isTrashed': isTrashed,
+        'trashedAt': trashedAt?.toIso8601String(),
       };
 
   factory CodeProject.fromJson(
@@ -211,6 +222,8 @@ class CodeProject {
       buildAutoFetchIntervalMinutes: (json['buildAutoFetchIntervalMinutes'] as num?)?.toInt() ?? 5,
       buildAutoLaunchExe: json['buildAutoLaunchExe'] == true,
       buildHistoryKeepCount: ((json['buildHistoryKeepCount'] as num?)?.toInt() ?? 10).clamp(1, 200),
+      isTrashed: json['isTrashed'] == true,
+      trashedAt: json['trashedAt'] != null ? DateTime.tryParse(json['trashedAt'].toString()) : null,
     );
   }
 

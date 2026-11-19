@@ -17,11 +17,33 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.66';
-  static const int currentBuildNumber = 66;
+  static const String currentVersion = '2.1.68';
+  static const int currentBuildNumber = 68;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.68',
+      buildNumber: 68,
+      title: 'Кнопка «Запустить .exe» в шапке проекта для быстрого запуска текущей сборки',
+      summary: 'Рядом с кнопками «Открыть папку» и «Открыть сборку» добавлена третья кнопка «Запустить .exe», которая находит и запускает исполняемый файл проекта в папке текущей сборки.',
+      changes: [
+        'Добавлен метод BuildBundleService.launchBuildExe для поиска и запуска .exe в папке текущей сборки (исключая служебные файлы и отдавая приоритет файлу проекта и самому свежему .exe)',
+        'Добавлена кнопка «Запустить .exe» в шапке проекта рядом с «Открыть папку» и «Открыть сборку»',
+        'Обновлена версия до 2.1.68+68 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
+    ReleaseEntry(
+      version: '2.1.67',
+      buildNumber: 67,
+      title: 'Перемещение проектов, удаление в корзину и раздел Корзина в «Моих проектах»',
+      summary: 'В боковой панели «Мои проекты» добавлены перемещение проектов (перетаскиванием и кнопками вверх/вниз), удаление в корзину и раздел Корзины с восстановлением и окончательным удалением.',
+      changes: [
+        'Добавлены перемещение проектов с сохранением порядка в settings.json и отправка проектов в корзину без потери данных',
+        'Добавлен переключатель «Корзина (N)» с восстановлением проекта, удалением навсегда и очисткой корзины',
+        'Обновлена версия до 2.1.67+67 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.66',
       buildNumber: 66,
@@ -83,27 +105,6 @@ class AppVersion {
         'В GitHubBuildFetcherService добавлено определение упавших workflow runs (failure, cancelled, timed_out и др.) с номером run, веткой и коммитом',
         'Добавлены красный баннер с кнопкой скрытия, подсветка статуса «Последняя проверка GitHub» и запись [ОШИБКА СБОРКИ GITHUB] в журнал распаковки',
         'Обновлена версия до 2.1.61+61 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.60',
-      buildNumber: 60,
-      title: 'Добавлено поле currentProjectNotes в ProjectProvider для вкладки «Заметки»',
-      summary: 'Исправлена ошибка анализатора undefined_identifier/undefined_getter: в ProjectProvider объявлено поле currentProjectNotes для хранения заметок и папок активного проекта.',
-      changes: [
-        'Добавлено поле ProjectNotesStore currentProjectNotes = const ProjectNotesStore() в lib/providers/project_provider.dart',
-        'Обновлена версия до 2.1.60+60 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.59',
-      buildNumber: 59,
-      title: 'Вкладка «Заметки» с папками и заметками для багов с привязкой к проекту',
-      summary: 'Добавлена новая вкладка «Заметки» для каждого проекта с созданием папок, заметок, быстрым шаблоном записи бага и сохранением в data/projects/<id>/notes.json.',
-      changes: [
-        'Добавлена модель ProjectNotesStore / ProjectNoteFolder / ProjectNoteItem и сохранение заметок строго внутри каталога выбранного проекта (notes.json)',
-        'Добавлена вкладка «Заметки» (ProjectNotesTab) с папками, поиском, быстрой кнопкой «Записать баг» и встроенным редактором заметок',
-        'Обновлена версия до 2.1.59+59 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

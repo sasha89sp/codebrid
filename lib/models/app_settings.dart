@@ -17,6 +17,7 @@ class AppSettings {
     this.backupDirectory,
     this.lastAutoBackupAt,
     this.lastFetchedBuildSources = const <String, String>{},
+    this.projectOrder = const <String>[],
   });
 
   final String? lastProjectId;
@@ -36,6 +37,7 @@ class AppSettings {
   final String? backupDirectory;
   final String? lastAutoBackupAt;
   final Map<String, String> lastFetchedBuildSources;
+  final List<String> projectOrder;
 
   AppSettings copyWith({
     String? lastProjectId,
@@ -55,6 +57,7 @@ class AppSettings {
     String? backupDirectory,
     String? lastAutoBackupAt,
     Map<String, String>? lastFetchedBuildSources,
+    List<String>? projectOrder,
     bool clearBackupDirectory = false,
     bool clearLastProject = false,
   }) {
@@ -97,6 +100,7 @@ class AppSettings {
         'backupDirectory': backupDirectory,
         'lastAutoBackupAt': lastAutoBackupAt,
         'lastFetchedBuildSources': lastFetchedBuildSources,
+        'projectOrder': projectOrder,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -124,6 +128,9 @@ class AppSettings {
               (k, v) => MapEntry(k.toString(), v.toString()),
             )
           : const <String, String>{},
+      projectOrder: (json['projectOrder'] is List)
+          ? (json['projectOrder'] as List).map((e) => e.toString()).toList()
+          : const <String>[],
     );
   }
 }

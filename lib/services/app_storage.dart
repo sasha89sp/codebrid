@@ -186,6 +186,26 @@ class AppStorage {
     );
   }
 
+  Future<void> deleteProjectPermanently(
+    CodeProject project, {
+    bool deleteExternalSourceFolder = false,
+  }) async {
+    final projDir = Directory(project.projectDirectory);
+    if (await projDir.exists()) {
+      await projDir.delete(recursive: true);
+    }
+    if (deleteExternalSourceFolder) {
+      final outDir = Directory(project.outputPath);
+      final projectsRoot = p.normalize(Directory(projectsDirectory).absolute.path);
+      final targetNorm = p.normalize(outDir.absolute.path);
+      if (!p.isWithin(projectsRoot, targetNorm) &&
+          targetNorm != projectsRoot &&
+          await outDir.exists()) {
+        await outDir.delete(recursive: true);
+      }
+    }
+  }
+
   Future<List<CodeProject>> loadProjects() async {
     final root = Directory(projectsDirectory);
     if (!await root.exists()) return <CodeProject>[];
@@ -345,6 +365,11 @@ class AppStorage {
       windowIsMaximized: isMaximized,
       windowIsFullScreen: isFullScreen,
     ));
+  }
+
+  Future<void> saveProjectOrder(List<String> orderedIds) async {
+    final current = await loadSettings();
+    await _updateSettings(_ => current.copyWith(projectOrder: orderedIds));
   }
 
   Future<void> saveLastProject(String? projectId) async {

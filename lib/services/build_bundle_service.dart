@@ -371,6 +371,84 @@ class BuildBundleService {
     }
   }
 
+  static Future<({bool success, String message, String? exePath})> launchBuildExe({
+    required String buildDirectory,
+    String? preferredPackageName,
+  }) async {
+    final currentDir = Directory(buildDirectory);
+    if (!await currentDir.exists()) {
+      return (
+        success: false,
+        message: 'Папка сборки не найдена: ${currentDir.path}',
+        exePath: null,
+      );
+    }
+
+    final exeFiles = <File>[];
+    await for (final entity in currentDir.list(recursive: true, followLinks: false)) {
+      if (entity is File && entity.path.toLowerCase().endsWith('.exe')) {
+        final base = p.basename(entity.path).toLowerCase();
+        if (base == 'createdump.exe' || base.startsWith('unins')) continue;
+        exeFiles.add(entity);
+      }
+    }
+
+    if (exeFiles.isEmpty) {
+      return (
+        success: false,
+        message: 'В папке сборки (${currentDir.path}) не найден .exe файл.',
+        exePath: null,
+      );
+    }
+
+    final normalizedPkg = (preferredPackageName ?? '')
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+    int scoreExe(File file) {
+      final stem = p.basenameWithoutExtension(file.path).toLowerCase();
+      final normStem = stem.replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (normalizedPkg.isNotEmpty) {
+        if (normStem == normalizedPkg) return 3;
+        if (normStem.contains(normalizedPkg) || normalizedPkg.contains(normStem)) {
+          return 2;
+        }
+      }
+      // Prefer shallow executables over nested helper binaries
+      final rel = p.relative(file.path, from: currentDir.path);
+      final depth = p.split(rel).length;
+      return depth <= 2 ? 1 : 0;
+    }
+
+    exeFiles.sort((a, b) {
+      final sa = scoreExe(a);
+      final sb = scoreExe(b);
+      if (sa != sb) return sb.compareTo(sa);
+      return b.statSync().modified.compareTo(a.statSync().modified);
+    });
+
+    final exe = exeFiles.first;
+    try {
+      await Process.start(
+        exe.absolute.path,
+        const <String>[],
+        workingDirectory: p.dirname(exe.absolute.path),
+        mode: ProcessStartMode.detached,
+      );
+      return (
+        success: true,
+        message: 'Запущен ${p.basename(exe.path)}',
+        exePath: exe.path,
+      );
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Не удалось запустить ${p.basename(exe.path)}: $e',
+        exePath: exe.path,
+      );
+    }
+  }
+
   static Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
     if (!await currentDir.exists()) return null;
     final exeFiles = <File>[];
