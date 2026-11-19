@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -104,7 +106,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 10),
             ],
           ),
-          body: Shortcuts(
+          body: const Shortcuts(
             shortcuts: <ShortcutActivator, Intent>{
               const SingleActivator(LogicalKeyboardKey.keyN, control: true): const _NewProjectIntent(),
               const SingleActivator(LogicalKeyboardKey.comma, control: true): const _OpenSettingsIntent(),
@@ -115,24 +117,24 @@ class HomeScreen extends StatelessWidget {
                 _NewProjectIntent: CallbackAction<_NewProjectIntent>(
                   onInvoke: (_) {
                     if (!provider.isWorking) {
-                      unawaited(_showCreateProjectDialog(context, provider));
+                      _showCreateProjectDialog(context, provider);
                     }
                     return null;
                   },
                 ),
                 _OpenSettingsIntent: CallbackAction<_OpenSettingsIntent>(
                   onInvoke: (_) {
-                    unawaited(_showAboutDialog(context, provider));
+                    _showAboutDialog(context, provider);
                     return null;
                   },
                 ),
                 _QuitAppIntent: CallbackAction<_QuitAppIntent>(
                   onInvoke: (_) {
-                    unawaited(() async {
+                    Future<void>(() async {
                       await windowSizeListener?.saveNow();
                       await provider.prepareForGracefulExit();
                       exit(0);
-                    }());
+                    });
                     return null;
                   },
                 ),

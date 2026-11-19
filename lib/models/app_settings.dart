@@ -117,6 +117,6 @@ class AppSettings {
               (k, v) => MapEntry(k.toString(), v.toString()),
             )
           : const <String, String>{},
-    );    );
+    );
   }
 }

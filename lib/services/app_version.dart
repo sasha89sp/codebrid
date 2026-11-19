@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.34';
-  static const int currentBuildNumber = 34;
+  static const String currentVersion = '2.1.35';
+  static const int currentBuildNumber = 35;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.35',
+      buildNumber: 35,
+      title: 'Исправлены ошибки анализатора в app_settings.dart и home_screen.dart',
+      summary: 'Убран лишний ); в AppSettings.fromJson и исправлены вызовы unawaited / const Shortcuts в lib/screens/home_screen.dart.',
+      changes: [
+        'Удалён лишний закрывающий ); на строке 120 в lib/models/app_settings.dart',
+        'Добавлен импорт dart:async, const для Shortcuts и корректный запуск асинхронного выхода в lib/screens/home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.34',
       buildNumber: 34,
