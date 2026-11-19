@@ -1,12 +1,12 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.5: публичные сборки берутся все по умолчанию"
+current_stage: "Релиз 2.1.6: устранены оставшиеся замечания flutter analyze"
 
 completed:
-  - "Добавлена настройка buildTakeAllPublicBuilds (по умолчанию true) — для публичных сборок перехватываются все скачанные ZIP-архивы без отсева по фильтру имени"
-  - "Обновлены CodeProject, ProjectProvider и вкладка «Авто-деплой»"
+  - "Заменён конкатенированный шаблон строки на интерполяцию в BuildBundleService._matchesPreserved (prefer_interpolation_to_compose_strings)"
+  - "Удалено неиспользуемое поле _shownPendingBuildZipPath в _AutoDeployTabState (unused_field)"
 
 pending:
-  - "Проверить работу релиза 2.1.5 на Windows и в GitHub Actions"
+  - "Запустить Main Validation на GitHub и проверить прохождение flutter analyze и flutter test"
 
 next_step: >
-  Залить архив 2.1.5, убедиться в прохождении проверок и проверить перехват всех архивов публичных сборок.
+  Залить архив 2.1.6 в репозиторий и убедиться, что шаг Analyze Dart code завершается без ошибок.

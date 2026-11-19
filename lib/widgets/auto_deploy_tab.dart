@@ -23,7 +23,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _autoDeployEnabled = false;
   bool _deleteZipAfterDeploy = false;
   bool _cleanBeforeExtract = false;
-  String? _shownPendingBuildZipPath;
   bool _buildCaptureEnabled = false;
   bool _buildAskTargetBeforeExtract = false;
   bool _buildTakeAllPublicBuilds = true;
@@ -223,7 +222,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
         },
       );
       dirCtrl.dispose();
-      _shownPendingBuildZipPath = null;
       if (!context.mounted) return;
       if (confirmedPath == null) {
         provider.dismissPendingBuild();

@@ -231,7 +231,8 @@ class BuildBundleService {
         final ext = pat.substring(1);
         if (lowerName.endsWith(ext)) return true;
       } else if (pat.contains('*')) {
-        final patternStr = '^' + RegExp.escape(pat).replaceAll(r'\*', '.*') + '\$';
+        final escapedPat = RegExp.escape(pat).replaceAll(r'\*', '.*');
+        final patternStr = '^$escapedPat\$';
         if (RegExp(patternStr).hasMatch(lowerName) ||
             RegExp(patternStr).hasMatch(lowerPath)) {
           return true;
