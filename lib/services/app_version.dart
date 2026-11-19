@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.47';
-  static const int currentBuildNumber = 47;
+  static const String currentVersion = '2.1.48';
+  static const int currentBuildNumber = 48;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.48',
+      buildNumber: 48,
+      title: 'Кнопки окна перенесены вправо в порядке Windows',
+      summary: 'В MacOsWindowTitleBar кнопки управления окном перенесены в правый угол и расположены слева направо в порядке Windows: свернуть, развернуть/восстановить, закрыть.',
+      changes: [
+        'Перенесён блок кнопок управления окном в правую часть MacOsWindowTitleBar',
+        'Установлен порядок кнопок как на Windows: жёлтая (свернуть), зелёная (развернуть/восстановить), красная (закрыть)',
+        'Обновлена версия до 2.1.48+48 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.47',
       buildNumber: 47,
@@ -96,17 +107,6 @@ class AppVersion {
         'Добавлен журнал распаковки в стиле консоли авто-деплоя (0xFF141A26, Consolas, кнопка «Очистить») и статус последней проверки GitHub',
         'Добавлена ротация копий в _history (buildHistoryKeepCount) и бережная обработка занятых файлов при распаковке',
         'Добавлен опциональный автозапуск найденного .exe после обновления папки current (buildAutoLaunchExe)',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.40',
-      buildNumber: 40,
-      title: 'Исправлено редактирование нового шаблона и ошибки анализатора из 2.1.39',
-      summary: 'Добавлены FocusNode и явное управление фокусом/readOnly в редакторе шаблонов, исправлены вызовы диалогов и удалены неиспользуемые импорты и функции.',
-      changes: [
-        'Добавлены _nameFocusNode, _contentFocusNode, readOnly: false и автофокус при создании шаблона в _TemplateManagerDialog',
-        'Исправлены вызовы showCreateProjectDialog и showAboutBackupDialog в home_screen.dart',
-        'Удалены неиспользуемые импорты и функции в home_screen.dart и about_backup_dialog.dart',
       ],
     ),
   ];

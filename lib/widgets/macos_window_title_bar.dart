@@ -83,42 +83,6 @@ class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> {
       ),
       child: Row(
         children: [
-          MouseRegion(
-            onEnter: (_) => setState(() => _hoveringGroup = true),
-            onExit: (_) => setState(() => _hoveringGroup = false),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _TrafficLightButton(
-                  color: const Color(0xFFFF5F56),
-                  borderColor: const Color(0xFFE0443E),
-                  glyph: Icons.close_rounded,
-                  tooltip: 'Закрыть',
-                  showGlyph: _hoveringGroup,
-                  onTap: _close,
-                ),
-                const SizedBox(width: 8),
-                _TrafficLightButton(
-                  color: const Color(0xFFFFBD2E),
-                  borderColor: const Color(0xFFDEA123),
-                  glyph: Icons.remove_rounded,
-                  tooltip: 'Свернуть',
-                  showGlyph: _hoveringGroup,
-                  onTap: _minimize,
-                ),
-                const SizedBox(width: 8),
-                _TrafficLightButton(
-                  color: const Color(0xFF27C93F),
-                  borderColor: const Color(0xFF1AAB29),
-                  glyph: _isMaximized ? Icons.unfold_less_rounded : Icons.open_in_full_rounded,
-                  tooltip: _isMaximized ? 'Восстановить размер' : 'Развернуть на весь экран',
-                  showGlyph: _hoveringGroup,
-                  onTap: _toggleMaximize,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
           Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
@@ -148,7 +112,45 @@ class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> {
               ),
             ),
           ),
-          if (widget.trailing != null) widget.trailing!,
+          if (widget.trailing != null) ...[
+            widget.trailing!,
+            const SizedBox(width: 14),
+          ],
+          MouseRegion(
+            onEnter: (_) => setState(() => _hoveringGroup = true),
+            onExit: (_) => setState(() => _hoveringGroup = false),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _TrafficLightButton(
+                  color: const Color(0xFFFFBD2E),
+                  borderColor: const Color(0xFFDEA123),
+                  glyph: Icons.remove_rounded,
+                  tooltip: 'Свернуть',
+                  showGlyph: _hoveringGroup,
+                  onTap: _minimize,
+                ),
+                const SizedBox(width: 8),
+                _TrafficLightButton(
+                  color: const Color(0xFF27C93F),
+                  borderColor: const Color(0xFF1AAB29),
+                  glyph: _isMaximized ? Icons.unfold_less_rounded : Icons.open_in_full_rounded,
+                  tooltip: _isMaximized ? 'Восстановить размер' : 'Развернуть на весь экран',
+                  showGlyph: _hoveringGroup,
+                  onTap: _toggleMaximize,
+                ),
+                const SizedBox(width: 8),
+                _TrafficLightButton(
+                  color: const Color(0xFFFF5F56),
+                  borderColor: const Color(0xFFE0443E),
+                  glyph: Icons.close_rounded,
+                  tooltip: 'Закрыть',
+                  showGlyph: _hoveringGroup,
+                  onTap: _close,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -1,15 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.47: исправлен вызов withOpacity для Flutter 3.24.5 в macos_window_title_bar.dart"
+current_stage: "Релиз 2.1.48: кнопки окна перенесены вправо в порядке Windows"
 
 completed:
-  - "Заменён .withValues(alpha: 0.78) на .withOpacity(0.78) в lib/widgets/macos_window_title_bar.dart"
-  - "Обновлена версия до 2.1.47+47 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Кнопки управления окном перенесены вправо и выстроены в порядке Windows в lib/widgets/macos_window_title_bar.dart"
+  - "Обновлена версия до 2.1.48+48 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions (шаг Analyze Dart code и сборка Windows)"
+  - "Проверить Build portable Windows x64 на GitHub Actions и расположение кнопок окна в приложении"
 
 next_step: >
-  Залить архив 2.1.47 в репозиторий и проверить прохождение Analyze Dart code и сборки Windows.
+  Залить архив 2.1.48 в репозиторий и проверить сборку Windows на GitHub.
