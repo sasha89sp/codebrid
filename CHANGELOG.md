@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.44+44
+- Исправлены ошибки `flutter analyze`: оформлены методы расширения в `build_bundle_service.dart` без `static`, удалён неиспользуемый `_clearDirectory`, добавлены `_buildAutoLaunchExe` и `_buildHistoryKeepCount` и поправлена структура `Column` в `build_capture_tab.dart`, удалён неиспользуемый импорт в `home_screen.dart`.
+
 ## 2.1.43+43
 - Исправлена кнопка «Проверить и скачать с GitHub»: при ручном запуске передаётся `forceRecheck: true`, проверяются последние успешные прогоны Actions и релизы, а в журнал выводятся точные причины, если URL не задан, нужен токен для артефактов или новых сборок нет.
 

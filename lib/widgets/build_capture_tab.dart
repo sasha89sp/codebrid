@@ -26,7 +26,16 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
   bool _buildClearBeforeApply = false;
   bool _buildAutoFetchEnabled = false;
   int _buildAutoFetchIntervalMinutes = 5;
+  late bool _buildAutoLaunchExe;
+  late int _buildHistoryKeepCount;
   String? _shownPendingZipPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _buildAutoLaunchExe = false;
+    _buildHistoryKeepCount = 10;
+  }
 
   @override
   void dispose() {
@@ -406,7 +415,6 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
               ],
             ),
           ),
-        ],
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
@@ -481,6 +489,7 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
             ),
           ),
 
+        ],
       ),
     );
   }

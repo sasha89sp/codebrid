@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../providers/project_provider.dart';

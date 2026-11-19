@@ -217,13 +217,6 @@ class BuildBundleService {
     return false;
   }
 
-  static Future<void> _clearDirectory(Directory dir) async {
-    if (!await dir.exists()) return;
-    await for (final entity in dir.list(followLinks: false)) {
-      await entity.delete(recursive: true);
-    }
-  }
-
   static Future<void> _copyDirectoryContents(Directory source, Directory destination) async {
     if (!await source.exists()) return;
     await destination.create(recursive: true);
@@ -315,7 +308,8 @@ class BuildBundleService {
   }
 }
 
-  static Future<void> _clearDirectorySafe(Directory dir, List<String> logs) async {
+extension _BuildBundleServiceExtensions on BuildBundleService {
+  Future<void> _clearDirectorySafe(Directory dir, List<String> logs) async {
     if (!await dir.exists()) return;
     await for (final entity in dir.list(followLinks: false)) {
       try {
@@ -326,7 +320,7 @@ class BuildBundleService {
     }
   }
 
-  static Future<void> _copyDirectoryContentsSafe(
+  Future<void> _copyDirectoryContentsSafe(
     Directory source,
     Directory destination,
     List<String> logs,
@@ -352,7 +346,7 @@ class BuildBundleService {
     }
   }
 
-  static Future<void> _pruneHistory(
+  Future<void> _pruneHistory(
     Directory historyRoot,
     int keepCount,
     List<String> logs,
@@ -378,7 +372,7 @@ class BuildBundleService {
     }
   }
 
-  static Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
+  Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
     if (!await currentDir.exists()) return null;
     final exeFiles = <File>[];
     await for (final entity in currentDir.list(recursive: true, followLinks: false)) {
@@ -408,3 +402,4 @@ class BuildBundleService {
       return null;
     }
   }
+}

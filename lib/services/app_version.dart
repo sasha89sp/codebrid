@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.43';
-  static const int currentBuildNumber = 43;
+  static const String currentVersion = '2.1.44';
+  static const int currentBuildNumber = 44;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.44',
+      buildNumber: 44,
+      title: 'Исправлены ошибки и замечания flutter analyze в релизе 2.1.43',
+      summary: 'Исправлены модификаторы методов расширения в build_bundle_service.dart, объявления полей и структура Column в build_capture_tab.dart, а также удалён неиспользуемый импорт в home_screen.dart.',
+      changes: [
+        'Оформлены вспомогательные методы BuildBundleService в расширение без лишнего static и удалён неиспользуемый _clearDirectory',
+        'Добавлены поля _buildAutoLaunchExe и _buildHistoryKeepCount и исправлена структура Column для журнала распаковки в build_capture_tab.dart',
+        'Удалён неиспользуемый импорт agent_template_item.dart в home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.43',
       buildNumber: 43,
@@ -97,16 +108,6 @@ class AppVersion {
         'Вынесен диалог «Файлы → текст для ИИ» в lib/widgets/files_to_prompt_dialog.dart',
         'Выделен GitHubBuildPollingCoordinator в lib/services/github_build_polling_service.dart',
         'Сокращён список ReleaseEntry в AppVersion до последних ключевых версий (полная история в CHANGELOG.md)',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.36',
-      buildNumber: 36,
-      title: 'Обновлены AGENTS.md, ROOT_MAP.md, MAP.md и вынесены горячие клавиши из home_screen.dart',
-      summary: 'Актуализированы правила разработки и карты проекта, а блок горячих клавиш вынесен в отдельный модуль lib/widgets/home_shortcuts.dart для разгрузки home_screen.dart.',
-      changes: [
-        'Обновлены AGENTS.md, ROOT_MAP.md и MAP.md под актуальную архитектуру и процесс сборки',
-        'Вынесен HomeShortcutsWrapper в lib/widgets/home_shortcuts.dart для уменьшения размера home_screen.dart',
       ],
     ),
   ];
