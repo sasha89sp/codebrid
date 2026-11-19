@@ -1,0 +1,12 @@
+status: ready_for_verification
+current_stage: "Редактирование названия проекта и полей ввода поверх базы 2.1.1"
+
+completed:
+  - "Добавлено переименование проекта в шапке workspace (_showRenameProjectDialog, ProjectProvider.renameCurrentProject, AppStorage.renameProject)"
+  - "Сохранены ручное редактирование AGENT.md и авто-деплой базы 2.1.1"
+
+pending:
+  - "Собрать обновлённую версию на Windows и проверить редактирование названия проекта, путей и текста"
+
+next_step: >
+  Распаковать архив, выполнить flutter analyze и flutter test, собрать Windows-версию и проверить редактирование полей.
