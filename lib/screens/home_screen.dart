@@ -15,6 +15,7 @@ import '../services/app_version.dart';
 import '../services/backup_service.dart';
 import '../services/build_bundle_service.dart';
 import '../services/files_to_prompt.dart';
+import '../services/window_size_listener.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
 import '../widgets/compact_app_menu.dart';
@@ -40,7 +41,9 @@ Future<void> _openFolder(BuildContext context, String folderPath) async {
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.windowSizeListener});
+
+  final WindowSizeListener? windowSizeListener;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +89,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 10),
               CompactAppMenuButton(
                 provider: provider,
+                windowSizeListener: windowSizeListener,
                 onNewProject: () => _showCreateProjectDialog(context, provider),
                 onFilesToPrompt: () => _showFilesToPromptDialog(context),
                 onAbout: () => _showAboutDialog(context, provider),
@@ -124,7 +128,12 @@ class HomeScreen extends StatelessWidget {
                 ),
                 _QuitAppIntent: CallbackAction<_QuitAppIntent>(
                   onInvoke: (_) {
-                    exit(0);
+                    unawaited(() async {
+                      await windowSizeListener?.saveNow();
+                      await provider.prepareForGracefulExit();
+                      exit(0);
+                    }());
+                    return null;
                   },
                 ),
               },

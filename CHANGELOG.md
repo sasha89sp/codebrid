@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.34+34
+- Синхронизирован контроллер вкладок с `selectedTabIndex` из меню, добавлен фоновый опрос сборок GitHub для всех проектов с включённой автопроверкой, выведены текущие статусы в меню и добавлено бережное сохранение состояния окна и остановка таймеров при выходе / `Ctrl+Q`.
+
 ## 2.1.33+33
 - Исправлены ошибки и предупреждения анализатора (`referenced_before_declaration` в `lib/main.dart`, `duplicate_definition` `clearDeployLogs` в `lib/providers/project_provider.dart` и `deprecated_export_use` `BytesBuilder` в `lib/services/github_build_fetcher_service.dart`).
 

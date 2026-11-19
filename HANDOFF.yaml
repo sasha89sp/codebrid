@@ -1,14 +1,14 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.33: исправлены ошибки анализатора в main.dart, project_provider.dart и github_build_fetcher_service.dart"
+current_stage: "Релиз 2.1.34: синхронизация вкладок, фоновый опрос по всем проектам и бережный выход"
 
 completed:
-  - "Исправлен порядок объявления windowSizeListener в lib/main.dart"
-  - "Удалён дубликат clearDeployLogs в lib/providers/project_provider.dart"
-  - "Добавлен импорт dart:typed_data в lib/services/github_build_fetcher_service.dart"
-  - "Обновлена версия до 2.1.33+33 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Синхронизирован TabController с selectedTabIndex при переключении из меню и по вкладкам"
+  - "Расширен фоновый опрос сборок GitHub на все проекты с включённой автопроверкой"
+  - "Добавлены текущие статусы проекта/автосборок в меню и бережное сохранение при выходе / Ctrl+Q"
+  - "Обновлена версия до 2.1.34+34 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Запустить Build portable Windows x64 на GitHub и убедиться, что flutter analyze проходит без ошибок"
+  - "Залить архив 2.1.34 и проверить сборку и работу функций"
 
 next_step: >
-  Залить архив 2.1.33 в репозиторий и проверить прохождение Analyze Dart code и сборку Windows.
+  Залить архив 2.1.34 в репозиторий и проверить переключение вкладок из меню, фоновые автосборки и выход.

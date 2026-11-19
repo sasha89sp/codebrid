@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -63,15 +65,18 @@ class AppTrayService with TrayListener {
     if (menuItem.key == 'open') {
       restoreWindow();
     } else if (menuItem.key == 'exit') {
-      exitApplication();
+      unawaited(exitApplication());
     }
   }
 
   WindowSizeListener? windowSizeListener;
 
-  Future<void> exitApplication() async {
+  Future<void> exitApplication({Future<void> Function()? beforeExit}) async {
     try {
       await windowSizeListener?.saveNow();
+      if (beforeExit != null) {
+        await beforeExit();
+      }
       trayManager.removeListener(this);
       await trayManager.destroy();
     } catch (_) {

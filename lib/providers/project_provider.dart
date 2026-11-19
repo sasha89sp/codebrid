@@ -606,13 +606,71 @@ class ProjectProvider extends ChangeNotifier {
   void _configureGitHubBuildPolling() {
     _githubBuildPollTimer?.cancel();
     _githubBuildPollTimer = null;
-    final proj = currentProject;
-    if (proj == null || !proj.buildAutoFetchEnabled) return;
-    final mins = proj.buildAutoFetchIntervalMinutes.clamp(1, 120);
-    _githubBuildPollTimer = Timer.periodic(Duration(minutes: mins), (_) {
-      unawaited(checkAndApplyGitHubBuilds(silent: true));
+    final enabledProjects = projects.where((pItem) => pItem.buildAutoFetchEnabled).toList();
+    if (enabledProjects.isEmpty) return;
+    final minInterval = enabledProjects
+        .map((pItem) => pItem.buildAutoFetchIntervalMinutes.clamp(1, 120))
+        .reduce((a, b) => a < b ? a : b);
+    _githubBuildPollTimer = Timer.periodic(Duration(minutes: minInterval), (_) {
+      unawaited(_pollAllEnabledGitHubBuilds());
     });
-    unawaited(checkAndApplyGitHubBuilds(silent: true));
+    unawaited(_pollAllEnabledGitHubBuilds());
+  }
+
+  Future<void> _pollAllEnabledGitHubBuilds() async {
+    final enabledProjects = projects.where((pItem) => pItem.buildAutoFetchEnabled).toList();
+    if (enabledProjects.isEmpty) return;
+    final activeId = currentProject?.id;
+    for (final proj in enabledProjects) {
+      if (proj.id == activeId) {
+        await checkAndApplyGitHubBuilds(silent: true);
+      } else {
+        await _checkGitHubBuildsForProject(proj);
+      }
+    }
+  }
+
+  Future<void> _checkGitHubBuildsForProject(CodeProject proj) async {
+    try {
+      final fetchDir = p.join(storage.dataDirectory, 'builds', '_fetched', proj.packageName);
+      final res = await GitHubBuildFetcherService.fetchLatestBuilds(
+        repoUrl: proj.gitRepoUrl,
+        token: githubToken,
+        downloadDirectory: fetchDir,
+        lastProcessedId: _lastFetchedBuildSourceByProject[proj.id],
+        zipFilter: proj.buildZipFilter,
+        takeAllBuilds: proj.buildTakeAllPublicBuilds,
+      );
+      for (final line in res.logs) {
+        _appendDeployLog('[${proj.name}] $line');
+      }
+      for (final item in res.fetchedZips) {
+        _lastFetchedBuildSourceByProject[proj.id] = item.sourceId;
+        await storage.saveLastFetchedBuildSource(proj.id, item.sourceId);
+        if (proj.buildCaptureEnabled) {
+          final baseBuildsDir = proj.buildTargetDirectory.trim().isNotEmpty
+              ? proj.buildTargetDirectory.trim()
+              : BuildBundleService.defaultBuildsRootDirectory(storage.dataDirectory);
+          final result = await BuildBundleService.applyDownloadedBuild(
+            zipPath: item.zipPath,
+            buildsRootDirectory: baseBuildsDir,
+            preservedPatterns: proj.buildPreservedFiles
+                .split(RegExp(r'[,\n;]'))
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList(),
+            overlayPreviousVersion: proj.buildOverlayPrevious,
+            clearTargetBeforeApply: proj.buildClearBeforeApply,
+          );
+          for (final line in result.logs) {
+            _appendDeployLog('[${proj.name}] $line');
+          }
+        }
+      }
+      notifyListeners();
+    } catch (error) {
+      _appendDeployLog('[${proj.name}] Ошибка автопроверки сборок GitHub: $error');
+    }
   }
 
   Future<GitHubBuildFetchResult> checkAndApplyGitHubBuilds({bool silent = false}) async {
@@ -939,6 +997,16 @@ class ProjectProvider extends ChangeNotifier {
       return p.normalize(project.zipArchiveFolder.trim());
     }
     return p.normalize(p.join(project.outputPath, '_zip_versions'));
+  }
+
+  Future<void> prepareForGracefulExit() async {
+    _autoBackupTimer?.cancel();
+    _autoBackupTimer = null;
+    _githubBuildPollTimer?.cancel();
+    _githubBuildPollTimer = null;
+    try {
+      await _downloadsWatcher.stop();
+    } catch (_) {}
   }
 
   Future<void> reorderTabs(int oldIndex, int newIndex) async {

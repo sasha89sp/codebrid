@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 import '../providers/project_provider.dart';
+import '../services/window_size_listener.dart';
 
 class CompactAppMenuButton extends StatelessWidget {
   const CompactAppMenuButton({
@@ -15,6 +16,7 @@ class CompactAppMenuButton extends StatelessWidget {
     required this.onAbout,
     required this.onOpenFolder,
     required this.onSelectTab,
+    this.windowSizeListener,
   });
 
   final ProjectProvider provider;
@@ -23,6 +25,7 @@ class CompactAppMenuButton extends StatelessWidget {
   final VoidCallback onAbout;
   final void Function(String folderPath) onOpenFolder;
   final void Function(String tabId) onSelectTab;
+  final WindowSizeListener? windowSizeListener;
 
   static const Color _bgDark = Color(0xFF222222);
   static const Color _borderDark = Color(0xFF3A3A3A);
@@ -92,6 +95,17 @@ class CompactAppMenuButton extends StatelessWidget {
           ),
           label: 'Деплой и сборки',
           entries: <_MenuEntrySpec>[
+            _MenuEntrySpec(
+              label: provider.currentProject != null
+                  ? 'Проект: ${provider.currentProject!.name} (${provider.currentProject!.gitBranch})'
+                  : 'Проект не выбран',
+            ),
+            _MenuEntrySpec(
+              label: provider.currentProject?.buildAutoFetchEnabled == true
+                  ? 'Автосборки GitHub: Вкл (${provider.currentProject!.buildAutoFetchIntervalMinutes} мин)'
+                  : 'Автосборки GitHub: Выкл',
+            ),
+            const _MenuEntrySpec(isDivider: true),
             _MenuEntrySpec(
               label: provider.downloadsWatcherEnabled
                   ? 'Мониторинг «Загрузок»: Вкл'
@@ -231,7 +245,7 @@ class CompactAppMenuButton extends StatelessWidget {
     if (action == _MenuAction.settings) {
       onAbout();
     } else if (action == _MenuAction.exitApp) {
-      exit(0);
+      await _performGracefulExit();
     }
   }
 
@@ -329,6 +343,14 @@ class CompactAppMenuButton extends StatelessWidget {
     if (chosen != null && chosen >= 0 && chosen < entries.length) {
       entries[chosen].onTap?.call();
     }
+  }
+
+  Future<void> _performGracefulExit() async {
+    try {
+      await windowSizeListener?.saveNow();
+      await provider.prepareForGracefulExit();
+    } catch (_) {}
+    exit(0);
   }
 
   Future<void> _toggleMaximize() async {

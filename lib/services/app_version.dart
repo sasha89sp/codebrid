@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.33';
-  static const int currentBuildNumber = 33;
+  static const String currentVersion = '2.1.34';
+  static const int currentBuildNumber = 34;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.34',
+      buildNumber: 34,
+      title: 'Синхронизация вкладок, фоновый опрос сборок для всех проектов и бережный выход',
+      summary: 'Синхронизирован контроллер вкладок с меню, добавлен фоновый опрос сборок GitHub по всем активным проектам, добавлены статусы в меню и бережное сохранение состояния при выходе.',
+      changes: [
+        'Связаны TabController и provider.selectedTabIndex для мгновенного переключения вкладок из меню',
+        'Расширен фоновый опрос сборок GitHub на все проекты с включённой автопроверкой',
+        'Добавлены статусы проекта и автосборок в меню и бережное сохранение состояния окна/таймеров при выходе и Ctrl+Q',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.33',
       buildNumber: 33,
