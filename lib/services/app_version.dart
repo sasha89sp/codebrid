@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.46';
-  static const int currentBuildNumber = 46;
+  static const String currentVersion = '2.1.47';
+  static const int currentBuildNumber = 47;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.47',
+      buildNumber: 47,
+      title: 'Исправлен вызов withValues на Color для совместимости с Flutter 3.24',
+      summary: 'В виджете MacOsWindowTitleBar заменён вызов .withValues(alpha: 0.78) на .withOpacity(0.78), поддерживаемый в Flutter 3.24.5.',
+      changes: [
+        'Заменён .withValues(alpha: 0.78) на .withOpacity(0.78) в lib/widgets/macos_window_title_bar.dart',
+        'Обновлена версия до 2.1.47+47 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.46',
       buildNumber: 46,
@@ -97,17 +107,6 @@ class AppVersion {
         'Добавлены _nameFocusNode, _contentFocusNode, readOnly: false и автофокус при создании шаблона в _TemplateManagerDialog',
         'Исправлены вызовы showCreateProjectDialog и showAboutBackupDialog в home_screen.dart',
         'Удалены неиспользуемые импорты и функции в home_screen.dart и about_backup_dialog.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.39',
-      buildNumber: 39,
-      title: 'Восстановлены методы деплоя/сборок в ProjectProvider и убраны замечания анализатора',
-      summary: 'Восстановлены методы deployZipArchive, applyBuildArchive, checkAndApplyGitHubBuilds, prepareForGracefulExit и другие в ProjectProvider, добавлен utf8 и super.key, удалены неиспользуемые импорты и функции.',
-      changes: [
-        'Восстановлены методы и геттеры деплоя, перехвата сборок, опроса GitHub и корректного выхода в ProjectProvider',
-        'Добавлен импорт dart:convert (utf8) и параметр super.key в FilesToPromptDialog',
-        'Удалены неиспользуемые функции и импорт в about_backup_dialog.dart, files_to_prompt_dialog.dart и project_dialogs.dart',
       ],
     ),
   ];

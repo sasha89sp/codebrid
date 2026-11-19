@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.47+47
+- Исправлена ошибка анализатора в `lib/widgets/macos_window_title_bar.dart`: заменён вызов `.withValues(alpha: 0.78)` на `.withOpacity(0.78)` для совместимости с Flutter 3.24.5.
+
 ## 2.1.46+46
 - Исправлена ошибка `instance_member_access_from_static` в `lib/services/build_bundle_service.dart`: вспомогательные методы `_clearDirectorySafe`, `_copyDirectoryContentsSafe`, `_pruneHistory` и `_launchNewestExeIfAny` возвращены в `BuildBundleService` как `static`.
 

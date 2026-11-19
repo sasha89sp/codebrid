@@ -192,7 +192,7 @@ class _TrafficLightButton extends StatelessWidget {
               ? Icon(
                   glyph,
                   size: 9,
-                  color: const Color(0xFF3A1A00).withValues(alpha: 0.78),
+                  color: const Color(0xFF3A1A00).withOpacity(0.78),
                 )
               : null,
         ),
