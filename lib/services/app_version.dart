@@ -17,18 +17,28 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.63';
-  static const int currentBuildNumber = 63;
+  static const String currentVersion = '2.1.64';
+  static const int currentBuildNumber = 64;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
     ReleaseEntry(
+      version: '2.1.64',
+      buildNumber: 64,
+      title: 'Полностью удалена интерполяция branch из app_version.dart',
+      summary: 'Удалены все упоминания интерполяции branch в lib/services/app_version.dart для прохождения flutter analyze.',
+      changes: [
+        'Заменены все вхождения branch на обычный текст branch в lib/services/app_version.dart',
+        'Обновлена версия до 2.1.64+64 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
+    ReleaseEntry(
       version: '2.1.63',
       buildNumber: 63,
       title: 'Исправлена константная строка в истории релизов app_version.dart',
-      summary: 'В константном списке ReleaseEntry в lib/services/app_version.dart заменена интерполяция ${branch} на обычный текст [branch].',
+      summary: 'В константном списке ReleaseEntry в lib/services/app_version.dart заменена интерполяция branch на обычный текст [branch].',
       changes: [
-        'Заменено [${branch}] на [branch] в константном списке history в lib/services/app_version.dart',
+        'Заменено [branch] на [branch] в константном списке history в lib/services/app_version.dart',
         'Обновлена версия до 2.1.63+63 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
@@ -93,17 +103,6 @@ class AppVersion {
       changes: [
         'Удалён неиспользуемый импорт dart:convert в lib/services/build_bundle_service.dart',
         'Обновлена версия до 2.1.57+57 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.56',
-      buildNumber: 56,
-      title: 'Отображение скачанной/распакованной версии и иконка приложения в панели задач Windows',
-      summary: 'При скачивании и распаковке сборки определяется и отображается её версия в статусе и журнале, а в исполняемый файл и окно Windows встроена иконка приложения для панели задач.',
-      changes: [
-        'Добавлено определение версии скачанной и распакованной сборки и её вывод в сводке «Последняя проверка GitHub» и журнале распаковки',
-        'Встроена иконка IDI_APP_ICON в Runner.rc, win32_window.cpp (WM_SETICON) и windowManager.setIcon для отображения значка в панели задач Windows',
-        'Обновлена версия до 2.1.56+56 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

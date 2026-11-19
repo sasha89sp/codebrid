@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.64+64
+- Удалены все вхождения строковой интерполяции `branch` в `lib/services/app_version.dart`, вызывавшие ошибки `undefined_identifier`, `invalid_constant`, `non_constant_list_element` и `unnecessary_brace_in_string_interps` при выполнении `flutter analyze`.
+
 ## 2.1.63+63
 - Исправлены ошибки `flutter analyze` в `lib/services/app_version.dart` (`unnecessary_brace_in_string_interps`, `invalid_constant`, `non_constant_list_element`, `undefined_identifier`): в константном списке истории релизов заменено `[${branch}]` на `[branch]`.
 

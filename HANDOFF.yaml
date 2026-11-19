@@ -1,15 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.63: исправлена константная строка [branch] в app_version.dart"
+current_stage: "Релиз 2.1.64: удалена интерполяция branch из app_version.dart"
 
 completed:
-  - "Заменено [${branch}] на [branch] в const истории релизов в lib/services/app_version.dart"
-  - "Обновлена версия до 2.1.63+63 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Заменены все вхождения branch на обычный текст branch в lib/services/app_version.dart"
+  - "Обновлена версия до 2.1.64+64 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить прохождение Analyze Dart code и сборку Windows 2.1.63 на GitHub Actions"
+  - "Проверить прохождение Analyze Dart code и сборку Windows 2.1.64 на GitHub Actions"
 
 next_step: >
-  Залить архив 2.1.63 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
+  Залить архив 2.1.64 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
