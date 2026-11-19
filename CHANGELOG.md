@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.60+60
+- Исправлены ошибки `flutter analyze` (`undefined_identifier` / `undefined_getter` для `currentProjectNotes`): добавлено объявление поля `ProjectNotesStore currentProjectNotes = const ProjectNotesStore()` в `lib/providers/project_provider.dart`.
+
 ## 2.1.59+59
 - Добавлена вкладка **«Заметки»** (`ProjectNotesTab`), привязанная к конкретному проекту (`data/projects/<id>/notes.json`): можно создавать папки, простые заметки, использовать быстрый шаблон **«Записать баг»**, искать и фильтровать записи.
 

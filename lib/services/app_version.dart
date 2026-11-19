@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.59';
-  static const int currentBuildNumber = 59;
+  static const String currentVersion = '2.1.60';
+  static const int currentBuildNumber = 60;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.60',
+      buildNumber: 60,
+      title: 'Добавлено поле currentProjectNotes в ProjectProvider для вкладки «Заметки»',
+      summary: 'Исправлена ошибка анализатора undefined_identifier/undefined_getter: в ProjectProvider объявлено поле currentProjectNotes для хранения заметок и папок активного проекта.',
+      changes: [
+        'Добавлено поле ProjectNotesStore currentProjectNotes = const ProjectNotesStore() в lib/providers/project_provider.dart',
+        'Обновлена версия до 2.1.60+60 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.59',
       buildNumber: 59,
@@ -96,17 +106,6 @@ class AppVersion {
         'Перенесено управление и создание шаблонов прямо внутрь вкладки «Инструкция» (без модального окна и отдельного маршрута Navigator)',
         'Добавлена кнопка «Новый шаблон» прямо на панель вкладки «Инструкция» и внутрь редактора шаблонов',
         'Обновлена версия до 2.1.53+53 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.52',
-      buildNumber: 52,
-      title: 'Уведомления о сохранении/ошибках и отключение автоподсказок в редакторе шаблонов',
-      summary: 'В экран библиотеки шаблонов добавлены SnackBar-уведомления при сохранении и ошибках записи, а также отключены автоподсказки/автокоррекция в полях ввода.',
-      changes: [
-        'Добавлены SnackBar-уведомления при успешном сохранении и при ошибке сохранения шаблона',
-        'Отключены autocorrect и enableSuggestions в полях названия и текста шаблона',
-        'Обновлена версия до 2.1.52+52 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

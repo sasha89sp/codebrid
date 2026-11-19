@@ -40,6 +40,7 @@ class ProjectProvider extends ChangeNotifier {
   String selectedTemplateId = 'flutter-monorepo-agents';
   CodeProject? currentProject;
   String agentContent = '';
+  ProjectNotesStore currentProjectNotes = const ProjectNotesStore();
   List<GeneratedFile> previewFiles = <GeneratedFile>[];
   List<String> parserWarnings = <String>[];
   String detectedResponseFormat = '';
