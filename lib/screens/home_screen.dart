@@ -14,6 +14,7 @@ import '../providers/project_provider.dart';
 import '../services/build_bundle_service.dart';
 import '../services/files_to_prompt.dart';
 import '../widgets/auto_deploy_tab.dart';
+import '../widgets/build_capture_tab.dart';
 import '../widgets/section_header.dart';
 
 Future<void> _openFolder(BuildContext context, String folderPath) async {
@@ -266,6 +267,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return Icons.content_paste_go_rounded;
       case 'files':
         return Icons.folder_copy_outlined;
+      case 'build_capture':
+        return Icons.layers_outlined;
       case 'auto_deploy':
       default:
         return Icons.rocket_launch_outlined;
@@ -280,6 +283,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return 'Ответ ИИ';
       case 'files':
         return 'Файлы проекта';
+      case 'build_capture':
+        return 'Распаковка сборок';
       case 'auto_deploy':
       default:
         return 'Авто-деплой';
@@ -294,6 +299,8 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
         return const _ImportTab();
       case 'files':
         return const _FilesTab();
+      case 'build_capture':
+        return const BuildCaptureTab();
       case 'auto_deploy':
       default:
         return const AutoDeployTab();
