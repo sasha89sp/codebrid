@@ -173,7 +173,7 @@ class CodeProject {
       autoSyncOnReject: json['autoSyncOnReject'] != false,
       moveZipAfterPush: json['moveZipAfterPush'] != false,
       zipArchiveFolder: (json['zipArchiveFolder'] as String? ?? '').trim(),
-    );      buildCaptureEnabled: json['buildCaptureEnabled'] == true,
+      buildCaptureEnabled: json['buildCaptureEnabled'] == true,
       buildAskTargetBeforeExtract: json['buildAskTargetBeforeExtract'] == true,
       buildTargetDirectory: json['buildTargetDirectory']?.toString() ?? '',
       buildZipFilter: json['buildZipFilter']?.toString() ?? '',

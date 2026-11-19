@@ -17,11 +17,20 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.25';
-  static const int currentBuildNumber = 25;
+  static const String currentVersion = '2.1.26';
+  static const int currentBuildNumber = 26;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.26',
+      buildNumber: 26,
+      title: 'Исправлена синтаксическая ошибка в CodeProject.fromJson',
+      summary: 'Убран преждевременный закрывающий ); на строке 176 в lib/models/code_project.dart, из-за которого поля buildCapture* воспринимались как метки.',
+      changes: [
+        'Удалён лишний ); после zipArchiveFolder в CodeProject.fromJson (lib/models/code_project.dart)',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.25',
       buildNumber: 25,
