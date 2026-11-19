@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.20+20
+- Исправлена ошибка `argument_type_not_assignable` при вызове `_findProject` с `String?` в `lib/providers/project_provider.dart` и подсказки `prefer_const` в `lib/screens/home_screen.dart`.
+
 ## 2.1.19+19
 - Исправлены ошибки анализатора в `lib/providers/project_provider.dart` (`duplicate_import`, `undefined_identifier` для `AgentTemplate`) и замечания `prefer_const` в `lib/screens/home_screen.dart`.
 

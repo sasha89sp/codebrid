@@ -1895,7 +1895,7 @@ Future<void> _showAboutDialog(BuildContext context, ProjectProvider provider) as
               children: [
                 const Icon(Icons.info_outline_rounded, size: 22),
                 const SizedBox(width: 8),
-                const Text('CodeBridge Mini — v${AppVersion.fullVersion}'),
+                Text('CodeBridge Mini — v${AppVersion.fullVersion}'),
               ],
             ),
             content: SizedBox(

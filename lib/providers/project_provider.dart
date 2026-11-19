@@ -857,7 +857,7 @@ class ProjectProvider extends ChangeNotifier {
       }
       projects = await storage.loadProjects();
       if (projects.isNotEmpty) {
-        currentProject = _findProject(currentProject?.id) ?? projects.first;
+        currentProject = (currentProject?.id != null ? _findProject(currentProject!.id) : null) ?? projects.first;
         await _loadCurrentProjectDetails();
       }
       final settings = await storage.loadSettings();

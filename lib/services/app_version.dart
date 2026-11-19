@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.19';
-  static const int currentBuildNumber = 19;
+  static const String currentVersion = '2.1.20';
+  static const int currentBuildNumber = 20;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.20',
+      buildNumber: 20,
+      title: 'Исправлена ошибка типа String? в _findProject и подсказки prefer_const',
+      summary: 'Приведён аргумент для _findProject к не-nullable String и устранены подсказки анализатора в home_screen.dart.',
+      changes: [
+        'Исправлен вызов _findProject(currentProject!.id) при наличии currentProject?.id в project_provider.dart',
+        'Убраны оставшиеся подсказки prefer_const в диалоге «О программе» в home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.19',
       buildNumber: 19,
