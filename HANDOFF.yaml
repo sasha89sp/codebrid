@@ -1,16 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.54: сохранение истории журналов, удаление и срок хранения (30 дней)"
+current_stage: "Релиз 2.1.55: исправлен конструктор и copyWith в AppSettings для logRetentionDays"
 
 completed:
-  - "Добавлено хранение истории журналов в data/logs/ с автоочисткой старше logRetentionDays (по умолчанию 30 дней)"
-  - "Добавлены выбор срока хранения и удаление истории во вкладках авто-деплоя и распаковки сборок"
-  - "Обновлена версия до 2.1.54+54 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлены this.logRetentionDays = 30 в конструктор AppSettings, параметр logRetentionDays в copyWith и сериализация JSON"
+  - "Обновлена версия до 2.1.55+55 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить сборку 2.1.54 на GitHub Actions и сохранение/очистку истории журналов после перезапуска"
+  - "Проверить прохождение Validate main branch / Analyze Dart code на GitHub Actions"
 
 next_step: >
-  Залить архив 2.1.54 в репозиторий и проверить сохранение и очистку истории журналов после перезапуска приложения.
+  Залить архив 2.1.55 в репозиторий и проверить прохождение Analyze Dart code и сборки Windows.

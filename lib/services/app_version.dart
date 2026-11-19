@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.54';
-  static const int currentBuildNumber = 54;
+  static const String currentVersion = '2.1.55';
+  static const int currentBuildNumber = 55;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.55',
+      buildNumber: 55,
+      title: 'Исправлена инициализация и copyWith для logRetentionDays в AppSettings',
+      summary: 'В класс AppSettings добавлены инициализация по умолчанию (30 дней), именованный параметр copyWith и сериализация JSON для поля logRetentionDays.',
+      changes: [
+        'Добавлен параметр this.logRetentionDays = 30 в конструктор AppSettings',
+        'Добавлен именованный параметр int? logRetentionDays в AppSettings.copyWith и сериализация toJson/fromJson',
+        'Обновлена версия до 2.1.55+55 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.54',
       buildNumber: 54,
@@ -97,16 +108,6 @@ class AppVersion {
         'Перенесён блок кнопок управления окном в правую часть MacOsWindowTitleBar',
         'Установлен порядок кнопок как на Windows: жёлтая (свернуть), зелёная (развернуть/восстановить), красная (закрыть)',
         'Обновлена версия до 2.1.48+48 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.47',
-      buildNumber: 47,
-      title: 'Исправлен вызов withValues на Color для совместимости с Flutter 3.24',
-      summary: 'В виджете MacOsWindowTitleBar заменён вызов .withValues(alpha: 0.78) на .withOpacity(0.78), поддерживаемый в Flutter 3.24.5.',
-      changes: [
-        'Заменён .withValues(alpha: 0.78) на .withOpacity(0.78) в lib/widgets/macos_window_title_bar.dart',
-        'Обновлена версия до 2.1.47+47 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];
