@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.31+31
+- Восстановлены методы `ProjectProvider` (`checkCurrentProjectGit`, `clearDeployLogs`, `dismissPendingBuild`, `confirmPendingBuild`, `createBackupNow`, `updateBackupSettings`, `restoreBackup`) и исправлены ошибки/подсказки анализатора в `lib/widgets/compact_app_menu.dart`.
+
 ## 2.1.30+30
 - Добавлено тёмное компактное меню с подменю (`Файл`, `Деплой и сборки`, `Бэкап и настройки`, `Окно`), быстрыми переключателями настроек программы и пунктами `Настройки` / `Выйти`.
 

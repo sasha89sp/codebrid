@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.30';
-  static const int currentBuildNumber = 30;
+  static const String currentVersion = '2.1.31';
+  static const int currentBuildNumber = 31;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.31',
+      buildNumber: 31,
+      title: 'Восстановлены методы ProjectProvider и исправлены ошибки анализатора в compact_app_menu.dart',
+      summary: 'Восстановлены все методы ProjectProvider и исправлены синтаксические/анализаторные ошибки в lib/widgets/compact_app_menu.dart.',
+      changes: [
+        'Восстановлены checkCurrentProjectGit, clearDeployLogs, dismissPendingBuild, confirmPendingBuild, createBackupNow, updateBackupSettings и restoreBackup в ProjectProvider',
+        'Исправлены кавычки, неиспользуемые поля и переключение максимизации/полного экрана через window_manager в compact_app_menu.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.30',
       buildNumber: 30,

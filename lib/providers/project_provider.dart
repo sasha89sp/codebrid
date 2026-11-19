@@ -13,8 +13,8 @@ import '../services/backup_service.dart';
 import '../services/downloads_watcher_service.dart';
 import '../services/file_writer.dart';
 import '../services/git_service.dart';
-import '../services/github_repo_service.dart';
 import '../services/github_build_fetcher_service.dart';
+import '../services/github_repo_service.dart';
 import '../services/project_naming.dart';
 import '../services/response_parser.dart';
 import '../services/build_bundle_service.dart';
@@ -59,10 +59,10 @@ class ProjectProvider extends ChangeNotifier {
   String? lastBackupZipPath;
   String? lastAutoBackupAt;
   Timer? _autoBackupTimer;
-  Timer? _autoBackupTimer;
   Timer? _githubBuildPollTimer;
   final Map<String, String> _lastFetchedBuildSourceByProject = <String, String>{};
   bool isCheckingGitHubBuilds = false;
+  int selectedTabIndex = 0;
 
   AgentTemplateItem? get selectedTemplate {
     for (final template in templates) {
@@ -596,7 +596,7 @@ class ProjectProvider extends ChangeNotifier {
     currentProject = updated;
     projects = projects.map((item) => item.id == updated.id ? updated : item).toList();
     _configureGitHubBuildPolling();
-    _appendDeployLog('Сохранены настройки распаковки сборок для «${updated.name}».');
+    _appendDeployLog('Сохранены настройки перехвата сборок для «${updated.name}».');
     notifyListeners();
   }
 
@@ -666,6 +666,402 @@ class ProjectProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> confirmPendingBuild({String? chosenTargetDirectory}) async {
+    final zipPath = pendingBuildZipPath;
+    if (zipPath == null) return;
+    pendingBuildZipPath = null;
+    pendingBuildSuggestedDir = null;
+    notifyListeners();
+    await applyBuildArchive(zipPath, customTargetDirectory: chosenTargetDirectory);
+  }
+
+  void dismissPendingBuild() {
+    pendingBuildZipPath = null;
+    pendingBuildSuggestedDir = null;
+    notifyListeners();
+  }
+
+  Future<void> applyBuildArchive(
+    String zipPath, {
+    String? customTargetDirectory,
+  }) async {
+    final project = currentProject;
+    if (project == null) {
+      _appendDeployLog('Пропущено (${p.basename(zipPath)}): не выбран активный проект.');
+      notifyListeners();
+      return;
+    }
+    if (isDeploying) {
+      _appendDeployLog('Пропущено (${p.basename(zipPath)}): уже выполняется обработка.');
+      notifyListeners();
+      return;
+    }
+
+    isDeploying = true;
+    errorMessage = null;
+    lastDeployStatus = 'Сборка новой версии из ${p.basename(zipPath)}...';
+    _appendDeployLog('--- Перехват скомпилированного архива: ${p.basename(zipPath)} ---');
+    notifyListeners();
+
+    try {
+      final preserved = project.buildPreservedFiles
+          .split(RegExp(r'[,\n;]'))
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      final buildsRoot = project.buildTargetDirectory.trim().isNotEmpty
+          ? project.buildTargetDirectory.trim()
+          : BuildBundleService.defaultBuildsRootDirectory(storage.dataDirectory);
+
+      lastBuildArchiveName = p.basename(zipPath);
+      final result = await BuildBundleService.applyDownloadedBuild(
+        zipPath: zipPath,
+        buildsRootDirectory: buildsRoot,
+        customTargetDirectory: customTargetDirectory,
+        preservedPatterns: preserved,
+        overlayPreviousVersion: project.buildOverlayPrevious,
+        clearTargetBeforeApply: project.buildClearBeforeApply,
+      );
+
+      for (final line in result.logs) {
+        _appendDeployLog(line);
+      }
+      lastDeployStatus = result.message;
+      if (result.success) {
+        infoMessage = result.message;
+      } else {
+        errorMessage = result.message;
+      }
+    } catch (error) {
+      final msg = error is FormatException ? error.message : error.toString();
+      _appendDeployLog('Ошибка сборки версии: $msg');
+      lastDeployStatus = 'Ошибка: $msg';
+      errorMessage = msg;
+    } finally {
+      isDeploying = false;
+      notifyListeners();
+    }
+  }
+
+  Future<GitStatusSummary?> checkCurrentProjectGit() async {
+    final project = currentProject;
+    if (project == null) return null;
+    lastGitStatus = await GitService.inspectDirectory(project.outputPath);
+    if (lastGitStatus!.gitInstalled) {
+      if (lastGitStatus!.isRepository) {
+        _appendDeployLog(
+          'Git OK (${lastGitStatus!.gitVersion}): ветка ${lastGitStatus!.branch ?? '?'}, '
+          'origin: ${lastGitStatus!.remoteUrl ?? 'не задан'}',
+        );
+      } else {
+        _appendDeployLog(
+          'Git установлен (${lastGitStatus!.gitVersion}), но в папке проекта пока нет .git (будет создан автоматически при деплое).',
+        );
+      }
+    } else {
+      _appendDeployLog('Git не найден: ${lastGitStatus!.error ?? 'установите Git for Windows'}');
+    }
+    notifyListeners();
+    return lastGitStatus;
+  }
+
+  Future<void> handleIncomingZipArgument(String zipPath) async {
+    _appendDeployLog('Получен ZIP через «Открыть с помощью»: ${p.basename(zipPath)}');
+    await deployZipArchive(zipPath, fromWatcher: false);
+  }
+
+  Future<void> deployZipArchive(String zipPath, {bool fromWatcher = false}) async {
+    final project = currentProject;
+    if (project == null) {
+      _appendDeployLog('Пропущено (${p.basename(zipPath)}): не выбран активный проект.');
+      notifyListeners();
+      return;
+    }
+
+    if (fromWatcher && !project.autoDeployEnabled) {
+      return;
+    }
+
+    final fileName = p.basename(zipPath);
+    if (fromWatcher && project.zipNameFilter.isNotEmpty) {
+      if (!fileName.toLowerCase().contains(project.zipNameFilter.toLowerCase())) {
+        return;
+      }
+    }
+
+    if (isDeploying) {
+      _appendDeployLog('Пропущено ($fileName): уже выполняется другой деплой.');
+      notifyListeners();
+      return;
+    }
+
+    isDeploying = true;
+    errorMessage = null;
+    lastDeployStatus = 'Обработка $fileName...';
+    _appendDeployLog('--- Старт авто-деплоя: $fileName ---');
+    notifyListeners();
+
+    try {
+      final inspection = await ZipDeployService.inspectZip(zipPath);
+      if (!inspection.isValidProject) {
+        final reason = inspection.reason ?? 'Архив не содержит pubspec.yaml или AGENTS.md.';
+        if (fromWatcher) {
+          _appendDeployLog('Игнорирован ($fileName): $reason');
+          lastDeployStatus = null;
+        } else {
+          _appendDeployLog('Отклонён ($fileName): $reason');
+          lastDeployStatus = reason;
+          errorMessage = reason;
+        }
+        return;
+      }
+
+      _appendDeployLog(
+        'Архив проверен: файлов ${inspection.fileCount}'
+        '${inspection.strippedRootPrefix.isNotEmpty ? ', снята корневая папка "${inspection.strippedRootPrefix}"' : ''}.',
+      );
+
+      final extractResult = await ZipDeployService.extractToDirectory(
+        zipPath: zipPath,
+        targetDirectory: project.outputPath,
+        cleanTarget: project.cleanBeforeExtract,
+        requireProjectMarkers: true,
+      );
+      _appendDeployLog(
+        'Распаковано файлов: ${extractResult.extractedCount} -> ${project.outputPath}',
+      );
+
+      outputFiles = await storage.listOutputFiles(project);
+
+      final gitResult = await GitService.deployDirectory(
+        directory: project.outputPath,
+        repoUrl: project.gitRepoUrl,
+        branch: project.gitBranch,
+        commitMessage: 'Auto-deploy $fileName via CodeBridge Mini',
+        push: true,
+        autoSyncOnReject: project.autoSyncOnReject,
+      );
+
+      for (final line in gitResult.logs) {
+        _appendDeployLog(line);
+      }
+
+      lastDeployStatus = gitResult.message;
+      if (gitResult.success) {
+        infoMessage = gitResult.message;
+        final zipFile = File(zipPath);
+        if (project.moveZipAfterPush) {
+          try {
+            if (await zipFile.exists()) {
+              final archiveDirPath = project.zipArchiveFolder.trim().isNotEmpty
+                  ? p.normalize(project.zipArchiveFolder.trim())
+                  : p.normalize(p.join(project.outputPath, '_zip_versions'));
+              final archiveDir = Directory(archiveDirPath);
+              await archiveDir.create(recursive: true);
+
+              var destPath = p.join(archiveDir.path, fileName);
+              if (await File(destPath).exists()) {
+                final dotIdx = fileName.lastIndexOf('.');
+                final stem = dotIdx > 0 ? fileName.substring(0, dotIdx) : fileName;
+                final ext = dotIdx > 0 ? fileName.substring(dotIdx) : '';
+                final now = DateTime.now();
+                String two(int n) => n.toString().padLeft(2, '0');
+                final stamp = '${now.year}${two(now.month)}${two(now.day)}_${two(now.hour)}${two(now.minute)}${two(now.second)}';
+                destPath = p.join(archiveDir.path, '${stem}_$stamp$ext');
+                var counter = 2;
+                while (await File(destPath).exists()) {
+                  destPath = p.join(archiveDir.path, '${stem}_${stamp}_$counter$ext');
+                  counter++;
+                }
+              }
+
+              if (project.deleteZipAfterDeploy) {
+                try {
+                  await zipFile.rename(destPath);
+                } on FileSystemException {
+                  await zipFile.copy(destPath);
+                  await zipFile.delete();
+                }
+                _appendDeployLog('ZIP перенесён в историю версий и удалён из исходной папки: $destPath');
+              } else {
+                await zipFile.copy(destPath);
+                _appendDeployLog('ZIP сохранён в историю версий: $destPath');
+              }
+            }
+          } catch (error) {
+            _appendDeployLog('Не удалось сохранить ZIP в папку версий: $error');
+          }
+        } else if (project.deleteZipAfterDeploy) {
+          try {
+            if (await zipFile.exists()) {
+              await zipFile.delete();
+              _appendDeployLog('Исходный ZIP удалён: $fileName');
+            }
+          } catch (error) {
+            _appendDeployLog('Не удалось удалить ZIP: $error');
+          }
+        }
+      } else {
+        errorMessage = gitResult.message;
+      }
+    } catch (error) {
+      final msg = error is FormatException ? error.message : error.toString();
+      _appendDeployLog('Ошибка авто-деплоя: $msg');
+      lastDeployStatus = 'Ошибка: $msg';
+      errorMessage = msg;
+    } finally {
+      isDeploying = false;
+      notifyListeners();
+    }
+  }
+
+  void setSelectedTabIndex(int index) {
+    if (index < 0 || index >= tabOrder.length) return;
+    selectedTabIndex = index;
+    notifyListeners();
+  }
+
+  void clearDeployLogs() {
+    deployLogs.clear();
+    lastDeployStatus = null;
+    notifyListeners();
+  }
+
+  Future<void> reorderTabs(int oldIndex, int newIndex) async {
+    final list = List<String>.from(tabOrder);
+    if (oldIndex < 0 || oldIndex >= list.length) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= list.length) return;
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex, moved);
+    tabOrder = list;
+    await storage.saveTabOrder(tabOrder);
+    notifyListeners();
+  }
+
+  Future<void> resetTabOrder() async {
+    tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
+    await storage.saveTabOrder(tabOrder);
+    notifyListeners();
+  }
+
+  void _configureAutoBackupTimer() {
+    _autoBackupTimer?.cancel();
+    _autoBackupTimer = null;
+    if (!autoBackupEnabled) return;
+    final minutes = autoBackupIntervalMinutes.clamp(5, 1440);
+    _autoBackupTimer = Timer.periodic(Duration(minutes: minutes), (_) {
+      unawaited(_runAutoBackupIfDue(force: false));
+    });
+  }
+
+  Future<void> _runAutoBackupIfDue({bool force = false}) async {
+    if (!autoBackupEnabled && !force) return;
+    final now = DateTime.now();
+    if (!force && lastAutoBackupAt != null && lastAutoBackupAt!.isNotEmpty) {
+      final parsed = DateTime.tryParse(lastAutoBackupAt!);
+      if (parsed != null) {
+        final elapsed = now.difference(parsed);
+        if (elapsed.inMinutes < autoBackupIntervalMinutes.clamp(5, 1440)) {
+          return;
+        }
+      }
+    }
+    await createBackupNow(isAuto: true, silent: true);
+  }
+
+  Future<void> updateBackupSettings({
+    required bool enabled,
+    required int intervalMinutes,
+    String? customBackupDir,
+  }) async {
+    autoBackupEnabled = enabled;
+    autoBackupIntervalMinutes = intervalMinutes.clamp(5, 1440);
+    final trimmed = customBackupDir?.trim() ?? '';
+    backupDirectory = trimmed.isEmpty ? null : trimmed;
+    await storage.saveBackupSettings(
+      autoBackupEnabled: autoBackupEnabled,
+      autoBackupIntervalMinutes: autoBackupIntervalMinutes,
+      backupDirectory: backupDirectory,
+    );
+    _configureAutoBackupTimer();
+    if (autoBackupEnabled) {
+      await _runAutoBackupIfDue(force: true);
+    }
+    notifyListeners();
+  }
+
+  Future<BackupResult> createBackupNow({
+    bool isAuto = false,
+    bool silent = false,
+  }) async {
+    final extraDirs = <String>[
+      for (final proj in projects)
+        if (Directory(proj.outputPath).existsSync()) proj.outputPath,
+    ];
+    final res = await BackupService.createFullBackup(
+      dataDirectory: storage.dataDirectory,
+      customBackupDirectory: backupDirectory,
+      isAuto: isAuto,
+      extraDirectories: extraDirs,
+    );
+    if (res.success && res.backupZipPath != null) {
+      lastBackupZipPath = res.backupZipPath;
+      final stampIso = DateTime.now().toIso8601String();
+      lastAutoBackupAt = stampIso;
+      await storage.recordLastAutoBackup(stampIso);
+      _appendDeployLog(res.message);
+      if (!silent) {
+        infoMessage = res.message;
+      }
+      notifyListeners();
+    } else if (!silent) {
+      errorMessage = res.message;
+      notifyListeners();
+    }
+    return res;
+  }
+
+  Future<BackupResult> restoreBackup(String zipPath) async {
+    isWorking = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final res = await BackupService.restoreFromBackupZip(
+        zipPath: zipPath,
+        dataDirectory: storage.dataDirectory,
+      );
+      if (!res.success) {
+        errorMessage = res.message;
+        return res;
+      }
+      projects = await storage.loadProjects();
+      if (projects.isNotEmpty) {
+        currentProject = (currentProject?.id != null ? _findProject(currentProject!.id) : null) ?? projects.first;
+        await _loadCurrentProjectDetails();
+      }
+      final settings = await storage.loadSettings();
+      autoBackupEnabled = settings.autoBackupEnabled;
+      autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
+      backupDirectory = settings.backupDirectory;
+      lastAutoBackupAt = settings.lastAutoBackupAt;
+      _configureAutoBackupTimer();
+      infoMessage = res.message;
+      _appendDeployLog(res.message);
+      return res;
+    } finally {
+      isWorking = false;
+      notifyListeners();
+    }
+  }
+
+  void clearDeployLogs() {
+    deployLogs.clear();
+    lastDeployStatus = null;
+    notifyListeners();
+  }
+
   void _appendDeployLog(String message) {
     final now = DateTime.now();
     final hh = now.hour.toString().padLeft(2, '0');

@@ -1,13 +1,12 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.30: тёмное каскадное меню с настройками программы"
+current_stage: "Релиз 2.1.31: восстановлены методы ProjectProvider и исправлены ошибки compact_app_menu.dart"
 
 completed:
-  - "Добавлен CompactAppMenuButton в тёмном стиле с каскадными подменю и пунктами настроек/выхода"
-  - "Связаны переключатели мониторинга «Загрузок», автобэкапа, бэкапа, проверки сборок GitHub, вкладок и папок"
-  - "Обновлена версия до 2.1.30+30 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Восстановлены все методы ProjectProvider и исправлены ошибки/предупреждения анализатора в lib/widgets/compact_app_menu.dart"
+  - "Обновлена версия до 2.1.31+31 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Проверить тёмное меню и работу настроек в релизе 2.1.30+30"
+  - "Запустить Build portable Windows x64 на GitHub и проверить прохождение Analyze Dart code"
 
 next_step: >
-  Залить архив 2.1.30 в репозиторий и проверить работу тёмного меню и подменю настроек.
+  Залить архив 2.1.31 в репозиторий и убедиться, что flutter analyze и сборка Windows проходят без ошибок.

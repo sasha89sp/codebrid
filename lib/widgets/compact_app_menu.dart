@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:window_manager/window_manager.dart';
 
 import '../providers/project_provider.dart';
-import 'home_screen.dart';
 
 class CompactAppMenuButton extends StatelessWidget {
   const CompactAppMenuButton({
@@ -26,8 +26,6 @@ class CompactAppMenuButton extends StatelessWidget {
 
   static const Color _bgDark = Color(0xFF222222);
   static const Color _borderDark = Color(0xFF3A3A3A);
-  static const Color _hoverDark = Color(0xFF363636);
-  static const Color _dividerDark = Color(0xFF353535);
   static const Color _mutedText = Color(0xFFBEBEBE);
 
   Future<void> _openMainMenu(BuildContext buttonContext) async {
@@ -153,7 +151,6 @@ class CompactAppMenuButton extends StatelessWidget {
                 );
               },
             ),
-            const _MenuEntrySpec(isDivider: true),
             _MenuEntrySpec(
               label: 'Настройки и история версий',
               shortcut: 'Ctrl+,',
@@ -173,11 +170,11 @@ class CompactAppMenuButton extends StatelessWidget {
           entries: <_MenuEntrySpec>[
             _MenuEntrySpec(
               label: 'Развернуть / восстановить окно',
-              onTap: () => _toggleMaximize(),
+              onTap: _toggleMaximize,
             ),
             _MenuEntrySpec(
               label: 'Полноэкранный режим',
-              onTap: () => _toggleFullScreen(),
+              onTap: _toggleFullScreen,
             ),
             const _MenuEntrySpec(isDivider: true),
             _MenuEntrySpec(
@@ -336,28 +333,20 @@ class CompactAppMenuButton extends StatelessWidget {
 
   Future<void> _toggleMaximize() async {
     try {
-      final res = await Process.run(
-        'powershell',
-        <String>[
-          '-NoProfile',
-          '-Command',
-          r'Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class Win32 {
-  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-  [DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr hWnd);
-}
-"@; $h = [Win32]::GetForegroundWindow(); if ([Win32]::IsZoomed($h)) { [Win32]::ShowWindow($h, 9) } else { [Win32]::ShowWindow($h, 3) }',
-        ],
-      );
-      if (res.exitCode != 0) {}
+      final isMax = await windowManager.isMaximized();
+      if (isMax) {
+        await windowManager.unmaximize();
+      } else {
+        await windowManager.maximize();
+      }
     } catch (_) {}
   }
 
   Future<void> _toggleFullScreen() async {
-    await _toggleMaximize();
+    try {
+      final isFs = await windowManager.isFullScreen();
+      await windowManager.setFullScreen(!isFs);
+    } catch (_) {}
   }
 
   @override
@@ -366,14 +355,14 @@ public class Win32 {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        hoverColor: _hoverDark.withValues(alpha: 0.14),
+        hoverColor: Colors.white12,
         onTap: () => _openMainMenu(context),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF222222),
+            color: _bgDark,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF3A3A3A)),
+            border: Border.all(color: _borderDark),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
