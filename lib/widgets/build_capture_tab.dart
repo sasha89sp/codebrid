@@ -504,13 +504,99 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                if (provider.latestFailedGitHubBuild != null) ...[
+                  Builder(
+                    builder: (context) {
+                      final failure = provider.latestFailedGitHubBuild!;
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 1),
+                              child: Icon(
+                                Icons.error_outline_rounded,
+                                size: 20,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Сборка на GitHub не удалась (run #${failure.runId} — ${failure.conclusion})',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF991B1B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    [
+                                      if (failure.workflowName.isNotEmpty)
+                                        'Workflow: ${failure.workflowName}',
+                                      if (failure.branch.isNotEmpty)
+                                        'Ветка: ${failure.branch}',
+                                      if (failure.commitTitle.isNotEmpty)
+                                        'Коммит: ${failure.commitTitle}',
+                                    ].join(' • '),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF7F1D1D),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Скрыть уведомление',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: provider.dismissGitHubBuildFailureBanner,
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                                color: Color(0xFF991B1B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 if (provider.lastBuildAutoCheckAt != null) ...[
-                  Text(
-                    'Последняя проверка GitHub: ${provider.lastBuildAutoCheckAt}${provider.lastBuildAutoCheckSummary != null ? ' (${provider.lastBuildAutoCheckSummary})' : ''}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF202A40),
-                    ),
+                  Row(
+                    children: [
+                      if (provider.lastBuildCheckHadFailure) ...[
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 18,
+                          color: Color(0xFFDC2626),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Expanded(
+                        child: Text(
+                          'Последняя проверка GitHub: ${provider.lastBuildAutoCheckAt}${provider.lastBuildAutoCheckSummary != null ? ' (${provider.lastBuildAutoCheckSummary})' : ''}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: provider.lastBuildCheckHadFailure
+                                ? const Color(0xFFB91C1C)
+                                : const Color(0xFF202A40),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                 ],

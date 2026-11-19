@@ -57,6 +57,8 @@ class ProjectProvider extends ChangeNotifier {
   String? lastBuildArchiveName;
   String? lastBuildAutoCheckAt;
   String? lastBuildAutoCheckSummary;
+  bool lastBuildCheckHadFailure = false;
+  GitHubBuildFailureInfo? latestFailedGitHubBuild;
   final List<String> unpackLogs = <String>[];
   String githubToken = '';
   String githubOwner = '';
@@ -697,8 +699,10 @@ class ProjectProvider extends ChangeNotifier {
         forceRecheck: !silent,
       );
       for (final line in res.logs) {
+        _appendUnpackLog(line);
         _appendDeployLog(line);
       }
+      latestFailedGitHubBuild = res.latestFailedBuild;
       if (!res.success && !silent && res.errorMessage != null) {
         errorMessage = res.errorMessage;
       }
@@ -725,9 +729,23 @@ class ProjectProvider extends ChangeNotifier {
           .toSet()
           .toList();
       final verLabel = versions.isNotEmpty ? ' — версия ${versions.join(', ')}' : '';
-      lastBuildAutoCheckSummary = res.fetchedZips.isNotEmpty
-          ? 'Скачано и распаковано сборок: ${res.fetchedZips.length}$verLabel'
-          : (res.success ? 'Новых сборок нет' : (res.errorMessage ?? 'Ошибка проверки'));
+      if (res.latestFailedBuild != null) {
+        lastBuildCheckHadFailure = true;
+        final failSummary = res.latestFailedBuild!.shortSummary;
+        lastBuildAutoCheckSummary = res.fetchedZips.isNotEmpty
+            ? '$failSummary; скачана предыдущая успешная сборка: ${res.fetchedZips.length}$verLabel'
+            : failSummary;
+      } else if (!res.success) {
+        lastBuildCheckHadFailure = true;
+        lastBuildAutoCheckSummary = res.errorMessage ?? 'Ошибка проверки GitHub';
+      } else {
+        lastBuildCheckHadFailure = false;
+        lastBuildAutoCheckSummary = res.fetchedZips.isNotEmpty
+            ? 'Скачано и распаковано сборок: ${res.fetchedZips.length}$verLabel'
+            : (res.hasInProgressBuild
+                ? 'Сборка на GitHub ещё выполняется...'
+                : 'Новых сборок нет');
+      }
       for (final line in res.logs) {
         _appendUnpackLog(line);
       }
@@ -1207,6 +1225,11 @@ class ProjectProvider extends ChangeNotifier {
       isWorking = false;
       notifyListeners();
     }
+  }
+
+  void dismissGitHubBuildFailureBanner() {
+    latestFailedGitHubBuild = null;
+    notifyListeners();
   }
 
   Future<void> clearUnpackLogs() async {

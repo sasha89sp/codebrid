@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.60';
-  static const int currentBuildNumber = 60;
+  static const String currentVersion = '2.1.61';
+  static const int currentBuildNumber = 61;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.61',
+      buildNumber: 61,
+      title: 'Оповещение об упавшей сборке GitHub в статусе, журнале и баннере',
+      summary: 'При проверке сборок с GitHub программа отслеживает статус последнего завершённого workflow run и при ошибке сборки выводит красный баннер, подсвечивает строку статуса и записывает ошибку в журнал распаковки.',
+      changes: [
+        'В GitHubBuildFetcherService добавлено определение упавших workflow runs (failure, cancelled, timed_out и др.) с номером run, веткой и коммитом',
+        'Добавлены красный баннер с кнопкой скрытия, подсветка статуса «Последняя проверка GitHub» и запись [ОШИБКА СБОРКИ GITHUB] в журнал распаковки',
+        'Обновлена версия до 2.1.61+61 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.60',
       buildNumber: 60,
@@ -95,17 +106,6 @@ class AppVersion {
         'Добавлено сохранение и автоматическая очистка старых записей журналов в AppStorage (data/logs/) с лимитом 30 дней по умолчанию',
         'Добавлены выбор срока хранения и удаление истории журналов в авто-деплое и распаковке сборок',
         'Обновлена версия до 2.1.54+54 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.53',
-      buildNumber: 53,
-      title: 'Встроенный редактор шаблонов прямо во вкладке «Инструкция» без всплывающих окон',
-      summary: 'Управление шаблонами и создание нового шаблона перенесены прямо внутрь основной вкладки «Инструкция» (без Dialog и отдельного маршрута Navigator), где гарантированно работает ввод с клавиатуры.',
-      changes: [
-        'Перенесено управление и создание шаблонов прямо внутрь вкладки «Инструкция» (без модального окна и отдельного маршрута Navigator)',
-        'Добавлена кнопка «Новый шаблон» прямо на панель вкладки «Инструкция» и внутрь редактора шаблонов',
-        'Обновлена версия до 2.1.53+53 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

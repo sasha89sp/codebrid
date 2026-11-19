@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.61+61
+- Добавлено оповещение о неудачной сборке на GitHub Actions сразу в трёх местах вкладки «Распаковка сборок»: в красном баннере над журналом (с номером прогона, workflow, веткой, коммитом и кнопкой скрытия), в подсвеченной строке статуса **«Последняя проверка GitHub»** и в **«Журнале распаковки сборок»** (`[ОШИБКА СБОРКИ GITHUB]`).
+
 ## 2.1.60+60
 - Исправлены ошибки `flutter analyze` (`undefined_identifier` / `undefined_getter` для `currentProjectNotes`): добавлено объявление поля `ProjectNotesStore currentProjectNotes = const ProjectNotesStore()` в `lib/providers/project_provider.dart`.
 

@@ -1,15 +1,16 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.60: объявлено поле currentProjectNotes в ProjectProvider"
+current_stage: "Релиз 2.1.61: отображение ошибки сборки GitHub в статусе, журнале и баннере"
 
 completed:
-  - "Добавлено поле ProjectNotesStore currentProjectNotes = const ProjectNotesStore() в lib/providers/project_provider.dart"
-  - "Обновлена версия до 2.1.60+60 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "В GitHubBuildFetcherService добавлено отслеживание упавших workflow runs (failure/cancelled/timed_out) и статуса in_progress"
+  - "В BuildCaptureTab и ProjectProvider добавлены красный баннер с кнопкой закрытия, подсветка статуса проверки и запись в журнал распаковки"
+  - "Обновлена версия до 2.1.61+61 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить прохождение Analyze Dart code и сборку Windows 2.1.60 на GitHub Actions"
+  - "Проверить сборку 2.1.61 на GitHub Actions и отображение статуса/баннера/журнала при проверке сборок"
 
 next_step: >
-  Залить архив 2.1.60 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
+  Залить архив 2.1.61 в репозиторий, собрать на GitHub и проверить работу оповещений при проверке сборок.

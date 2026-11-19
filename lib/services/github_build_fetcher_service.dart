@@ -21,21 +21,57 @@ class FetchedBuildItem {
   final String? detectedVersion;
 }
 
+class GitHubBuildFailureInfo {
+  const GitHubBuildFailureInfo({
+    required this.runId,
+    required this.workflowName,
+    required this.conclusion,
+    required this.branch,
+    required this.commitTitle,
+    this.htmlUrl,
+  });
+
+  final String runId;
+  final String workflowName;
+  final String conclusion;
+  final String branch;
+  final String commitTitle;
+  final String? htmlUrl;
+
+  String get shortSummary {
+    final wf = workflowName.isNotEmpty ? ' ($workflowName)' : '';
+    final br = branch.isNotEmpty ? ' [${branch}]' : '';
+    return 'Сборка на GitHub упала: run #$runId$wf$br — статус $conclusion';
+  }
+}
+
 class GitHubBuildFetchResult {
   const GitHubBuildFetchResult({
     required this.success,
     required this.logs,
     required this.fetchedZips,
     this.errorMessage,
+    this.latestFailedBuild,
+    this.hasInProgressBuild = false,
   });
 
   final bool success;
   final List<String> logs;
   final List<FetchedBuildItem> fetchedZips;
   final String? errorMessage;
+  final GitHubBuildFailureInfo? latestFailedBuild;
+  final bool hasInProgressBuild;
 }
 
 class GitHubBuildFetcherService {
+  static const Set<String> _failureConclusions = <String>{
+    'failure',
+    'cancelled',
+    'timed_out',
+    'startup_failure',
+    'action_required',
+  };
+
   static Uri? parseGitHubRepoUri(String rawUrl) {
     final trimmed = rawUrl.trim();
     if (trimmed.isEmpty) return null;
@@ -94,7 +130,7 @@ class GitHubBuildFetcherService {
     if (pubspecMatch != null) return pubspecMatch.group(1);
 
     final dartVerMatch = RegExp(r'''currentVersion\s*=\s*['"](\d+\.\d+\.\d+)['"]''').firstMatch(text);
-    final dartBuildMatch = RegExp(r'''currentBuildNumber\s*=\\s*(\d+)''').firstMatch(text);
+    final dartBuildMatch = RegExp(r'''currentBuildNumber\s*=\s*(\d+)''').firstMatch(text);
     if (dartVerMatch != null) {
       final ver = dartVerMatch.group(1)!;
       final b = dartBuildMatch?.group(1);
@@ -140,6 +176,8 @@ class GitHubBuildFetcherService {
 
     final client = HttpClient();
     final fetched = <FetchedBuildItem>[];
+    GitHubBuildFailureInfo? latestFailedBuild;
+    var hasInProgressBuild = false;
 
     Future<String?> getJsonString(Uri uri) async {
       final req = await client.getUrl(uri);
@@ -180,17 +218,65 @@ class GitHubBuildFetcherService {
 
     try {
       logs.add('Запрос сборок GitHub для ${repoApiBase.path}...');
-      final runsUri = Uri.parse('${repoApiBase.toString()}/actions/runs?status=completed&per_page=10');
+      final runsUri = Uri.parse('${repoApiBase.toString()}/actions/runs?per_page=12');
       final runsJson = await getJsonString(runsUri);
       if (runsJson != null) {
         final decodedRuns = jsonDecode(runsJson);
         if (decodedRuns is Map<String, dynamic> && decodedRuns['workflow_runs'] is List) {
-          final runs = (decodedRuns['workflow_runs'] as List)
+          final allRuns = (decodedRuns['workflow_runs'] as List)
               .whereType<Map<String, dynamic>>()
-              .where((r) => (r['conclusion'] as String? ?? '').toLowerCase() == 'success')
+              .toList();
+
+          for (final run in allRuns) {
+            final status = (run['status'] as String? ?? '').toLowerCase();
+            final conclusion = (run['conclusion'] as String? ?? '').toLowerCase();
+            if (status != 'completed') {
+              hasInProgressBuild = true;
+              continue;
+            }
+            if (conclusion == 'success') {
+              // Самый свежий завершённый прогон прошёл успешно — ошибки последней сборки нет.
+              break;
+            }
+            if (_failureConclusions.contains(conclusion)) {
+              final failedId = run['id']?.toString() ?? '';
+              final wfName = (run['name'] as String? ?? '').trim();
+              final branch = (run['head_branch'] as String? ?? '').trim();
+              final commitTitle = (run['display_title'] as String? ??
+                      run['head_commit']?['message'] as String? ??
+                      '')
+                  .split('\n')
+                  .first
+                  .trim();
+              final htmlUrl = (run['html_url'] as String?)?.trim();
+              final info = GitHubBuildFailureInfo(
+                runId: failedId,
+                workflowName: wfName,
+                conclusion: conclusion,
+                branch: branch,
+                commitTitle: commitTitle,
+                htmlUrl: (htmlUrl != null && htmlUrl.isNotEmpty) ? htmlUrl : null,
+              );
+              latestFailedBuild = info;
+              final titleSuffix = commitTitle.isNotEmpty ? ' — «$commitTitle»' : '';
+              logs.add(
+                '[ОШИБКА СБОРКИ GITHUB] Run #$failedId${wfName.isNotEmpty ? ' ($wfName)' : ''} завершился со статусом $conclusion$titleSuffix.',
+              );
+              break;
+            }
+          }
+
+          final runs = allRuns
+              .where((r) =>
+                  (r['status'] as String? ?? '').toLowerCase() == 'completed' &&
+                  (r['conclusion'] as String? ?? '').toLowerCase() == 'success')
               .toList();
           if (runs.isEmpty) {
-            logs.add('Успешных завершённых workflow runs в Actions пока нет.');
+            logs.add(
+              hasInProgressBuild
+                  ? 'Сборка на GitHub ещё выполняется; готовых успешных runs пока нет.'
+                  : 'Успешных завершённых workflow runs в Actions пока нет.',
+            );
           }
           for (final bestRun in runs.take(5)) {
             final runId = bestRun['id']?.toString() ?? '';
@@ -336,6 +422,8 @@ class GitHubBuildFetcherService {
         success: true,
         logs: logs,
         fetchedZips: fetched,
+        latestFailedBuild: latestFailedBuild,
+        hasInProgressBuild: hasInProgressBuild,
       );
     } catch (e) {
       final msg = 'Ошибка при проверке/скачивании сборок с GitHub: $e';
@@ -345,6 +433,8 @@ class GitHubBuildFetcherService {
         logs: logs,
         fetchedZips: fetched,
         errorMessage: msg,
+        latestFailedBuild: latestFailedBuild,
+        hasInProgressBuild: hasInProgressBuild,
       );
     } finally {
       client.close(force: true);
