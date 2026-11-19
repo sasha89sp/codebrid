@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.53';
-  static const int currentBuildNumber = 53;
+  static const String currentVersion = '2.1.54';
+  static const int currentBuildNumber = 54;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.54',
+      buildNumber: 54,
+      title: 'Сохранение истории журналов на диск, очистка и лимит хранения (30 дней по умолчанию)',
+      summary: 'Журналы авто-деплоя и распаковки сборок сохраняются в data/logs/, поддерживают удаление истории и настройку срока хранения (7 / 30 / 90 дней или без ограничения).',
+      changes: [
+        'Добавлено сохранение и автоматическая очистка старых записей журналов в AppStorage (data/logs/) с лимитом 30 дней по умолчанию',
+        'Добавлены выбор срока хранения и удаление истории журналов в авто-деплое и распаковке сборок',
+        'Обновлена версия до 2.1.54+54 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.53',
       buildNumber: 53,
@@ -96,17 +107,6 @@ class AppVersion {
       changes: [
         'Заменён .withValues(alpha: 0.78) на .withOpacity(0.78) в lib/widgets/macos_window_title_bar.dart',
         'Обновлена версия до 2.1.47+47 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.46',
-      buildNumber: 46,
-      title: 'Исправлен вызов методов из static applyDownloadedBuild в BuildBundleService',
-      summary: 'Вспомогательные методы _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny возвращены в класс BuildBundleService с модификатором static.',
-      changes: [
-        'Возвращены _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny в BuildBundleService как static-методы',
-        'Устранена ошибка instance_member_access_from_static при вызове из applyDownloadedBuild',
-        'Обновлена версия до 2.1.46+46 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -298,9 +300,30 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
           const SizedBox(height: 16),
           _CardSection(
             title: '3. Журнал авто-деплоя',
-            trailing: TextButton(
-              onPressed: provider.deployLogs.isEmpty ? null : provider.clearDeployLogs,
-              child: const Text('Очистить'),
+            trailing: Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                DropdownButton<int>(
+                  value: provider.logRetentionDays,
+                  underline: const SizedBox.shrink(),
+                  items: const <DropdownMenuItem<int>>[
+                    DropdownMenuItem<int>(value: 7, child: Text('За 7 дней')),
+                    DropdownMenuItem<int>(value: 30, child: Text('За 30 дней')),
+                    DropdownMenuItem<int>(value: 90, child: Text('За 90 дней')),
+                    DropdownMenuItem<int>(value: 0, child: Text('Без ограничения')),
+                  ],
+                  onChanged: (int? days) {
+                    if (days != null) unawaited(provider.setLogRetentionDays(days));
+                  },
+                ),
+                TextButton(
+                  onPressed: provider.deployLogs.isEmpty
+                      ? null
+                      : () => unawaited(provider.clearDeployLogs()),
+                  child: const Text('Удалить историю'),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

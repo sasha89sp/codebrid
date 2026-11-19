@@ -29,6 +29,7 @@ class AppSettings {
   final List<String> tabOrder;
   final String githubToken;
   final String githubOwner;
+  final int logRetentionDays;
   final bool autoBackupEnabled;
   final int autoBackupIntervalMinutes;
   final String? backupDirectory;

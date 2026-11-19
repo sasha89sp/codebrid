@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -479,9 +481,25 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                         ),
                       ),
                     ),
+                    DropdownButton<int>(
+                      value: provider.logRetentionDays,
+                      underline: const SizedBox.shrink(),
+                      items: const <DropdownMenuItem<int>>[
+                        DropdownMenuItem<int>(value: 7, child: Text('За 7 дней')),
+                        DropdownMenuItem<int>(value: 30, child: Text('За 30 дней')),
+                        DropdownMenuItem<int>(value: 90, child: Text('За 90 дней')),
+                        DropdownMenuItem<int>(value: 0, child: Text('Без ограничения')),
+                      ],
+                      onChanged: (int? days) {
+                        if (days != null) unawaited(provider.setLogRetentionDays(days));
+                      },
+                    ),
+                    const SizedBox(width: 8),
                     TextButton(
-                      onPressed: provider.unpackLogs.isEmpty ? null : provider.clearUnpackLogs,
-                      child: const Text('Очистить'),
+                      onPressed: provider.unpackLogs.isEmpty
+                          ? null
+                          : () => unawaited(provider.clearUnpackLogs()),
+                      child: const Text('Удалить историю'),
                     ),
                   ],
                 ),

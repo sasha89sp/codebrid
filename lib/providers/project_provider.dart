@@ -58,6 +58,7 @@ class ProjectProvider extends ChangeNotifier {
   final List<String> unpackLogs = <String>[];
   String githubToken = '';
   String githubOwner = '';
+  int logRetentionDays = 30;
   late final BackupCoordinator _backupCoordinator = BackupCoordinator(
     storage: storage,
     getProjects: () => projects,
@@ -122,6 +123,21 @@ class ProjectProvider extends ChangeNotifier {
       downloadsWatcherEnabled = settings.downloadsWatcherEnabled;
       githubToken = settings.githubToken;
       githubOwner = settings.githubOwner;
+      logRetentionDays = settings.logRetentionDays;
+      final savedDeploy = await storage.loadAndPruneLogHistory(
+        channel: 'deploy',
+        retentionDays: logRetentionDays,
+      );
+      final savedUnpack = await storage.loadAndPruneLogHistory(
+        channel: 'unpack',
+        retentionDays: logRetentionDays,
+      );
+      deployLogs
+        ..clear()
+        ..addAll(savedDeploy);
+      unpackLogs
+        ..clear()
+        ..addAll(savedUnpack);
       _lastFetchedBuildSourceByProject
         ..clear()
         ..addAll(settings.lastFetchedBuildSources);
@@ -975,9 +991,32 @@ class ProjectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearDeployLogs() {
+  Future<void> setLogRetentionDays(int days) async {
+    final normalized = days.clamp(0, 3650);
+    logRetentionDays = normalized;
+    final current = await storage.loadSettings();
+    await storage.saveSettings(current.copyWith(logRetentionDays: normalized));
+    final prunedDeploy = await storage.loadAndPruneLogHistory(
+      channel: 'deploy',
+      retentionDays: normalized,
+    );
+    final prunedUnpack = await storage.loadAndPruneLogHistory(
+      channel: 'unpack',
+      retentionDays: normalized,
+    );
+    deployLogs
+      ..clear()
+      ..addAll(prunedDeploy);
+    unpackLogs
+      ..clear()
+      ..addAll(prunedUnpack);
+    notifyListeners();
+  }
+
+  Future<void> clearDeployLogs() async {
     deployLogs.clear();
     lastDeployStatus = null;
+    await storage.clearLogHistory('deploy');
     notifyListeners();
   }
 
@@ -1043,8 +1082,9 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
-  void clearUnpackLogs() {
+  Future<void> clearUnpackLogs() async {
     unpackLogs.clear();
+    await storage.clearLogHistory('unpack');
     notifyListeners();
   }
 
@@ -1053,10 +1093,16 @@ class ProjectProvider extends ChangeNotifier {
     final hh = now.hour.toString().padLeft(2, '0');
     final mm = now.minute.toString().padLeft(2, '0');
     final ss = now.second.toString().padLeft(2, '0');
-    unpackLogs.add('[$hh:$mm:$ss] $message');
-    if (unpackLogs.length > 200) {
-      unpackLogs.removeRange(0, unpackLogs.length - 200);
+    final line = '[$hh:$mm:$ss] $message';
+    unpackLogs.add(line);
+    if (unpackLogs.length > 500) {
+      unpackLogs.removeRange(0, unpackLogs.length - 500);
     }
+    unawaited(storage.appendLogEntry(
+      channel: 'unpack',
+      line: line,
+      retentionDays: logRetentionDays,
+    ));
   }
 
   void _appendDeployLog(String message) {
@@ -1064,10 +1110,16 @@ class ProjectProvider extends ChangeNotifier {
     final hh = now.hour.toString().padLeft(2, '0');
     final mm = now.minute.toString().padLeft(2, '0');
     final ss = now.second.toString().padLeft(2, '0');
-    deployLogs.add('[$hh:$mm:$ss] $message');
-    if (deployLogs.length > 200) {
-      deployLogs.removeRange(0, deployLogs.length - 200);
+    final line = '[$hh:$mm:$ss] $message';
+    deployLogs.add(line);
+    if (deployLogs.length > 500) {
+      deployLogs.removeRange(0, deployLogs.length - 500);
     }
+    unawaited(storage.appendLogEntry(
+      channel: 'deploy',
+      line: line,
+      retentionDays: logRetentionDays,
+    ));
   }
 
   Future<void> prepareResponse(String response) async {

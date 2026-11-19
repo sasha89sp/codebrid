@@ -16,6 +16,7 @@ class AppStorage {
   late final String templatesDirectory;
   late final String settingsFile;
   late final String templatesIndexFile;
+  late final String logsDirectory;
   AppSettings? _settingsCache;
   Future<void> _settingsWriteQueue = Future<void>.value();
 
@@ -26,8 +27,10 @@ class AppStorage {
     templatesDirectory = p.join(dataDirectory, 'templates');
     settingsFile = p.join(dataDirectory, 'settings.json');
     templatesIndexFile = p.join(templatesDirectory, 'index.json');
+    logsDirectory = p.join(dataDirectory, 'logs');
 
     await Directory(projectsDirectory).create(recursive: true);
+    await Directory(logsDirectory).create(recursive: true);
     await Directory(templatesDirectory).create(recursive: true);
     if (!await File(settingsFile).exists()) {
       await saveSettings(const AppSettings());
@@ -465,6 +468,95 @@ class AppStorage {
     if (changed) {
       await _writeTemplateIndex(updated);
     }
+  }
+
+
+  Future<List<String>> loadAndPruneLogHistory({
+    required String channel,
+    required int retentionDays,
+  }) async {
+    final file = File(p.join(logsDirectory, '${channel}_history.json'));
+    if (!await file.exists()) return <String>[];
+    try {
+      final decoded = jsonDecode(await file.readAsString(encoding: utf8));
+      if (decoded is! List) return <String>[];
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      final maxAgeMs = retentionDays > 0
+          ? Duration(days: retentionDays).inMilliseconds
+          : null;
+      final keptEntries = <Map<String, Object?>>[];
+      final lines = <String>[];
+      for (final raw in decoded) {
+        if (raw is! Map<String, dynamic>) continue;
+        final ts = (raw['ts'] as num?)?.toInt() ?? nowMs;
+        final line = raw['line']?.toString();
+        if (line == null || line.isEmpty) continue;
+        if (maxAgeMs != null && (nowMs - ts) > maxAgeMs) continue;
+        keptEntries.add({'ts': ts, 'line': line});
+        lines.add(line);
+      }
+      final trimmedEntries = keptEntries.length > 500
+          ? keptEntries.sublist(keptEntries.length - 500)
+          : keptEntries;
+      final trimmedLines = lines.length > 500
+          ? lines.sublist(lines.length - 500)
+          : lines;
+      if (trimmedEntries.length != decoded.length) {
+        await _writeLogEntries(file, trimmedEntries);
+      }
+      return trimmedLines;
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
+  Future<void> appendLogEntry({
+    required String channel,
+    required String line,
+    required int retentionDays,
+  }) async {
+    final file = File(p.join(logsDirectory, '${channel}_history.json'));
+    await Directory(logsDirectory).create(recursive: true);
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final maxAgeMs = retentionDays > 0
+        ? Duration(days: retentionDays).inMilliseconds
+        : null;
+    final entries = <Map<String, Object?>>[];
+    if (await file.exists()) {
+      try {
+        final decoded = jsonDecode(await file.readAsString(encoding: utf8));
+        if (decoded is List) {
+          for (final raw in decoded) {
+            if (raw is! Map<String, dynamic>) continue;
+            final ts = (raw['ts'] as num?)?.toInt() ?? nowMs;
+            final oldLine = raw['line']?.toString();
+            if (oldLine == null || oldLine.isEmpty) continue;
+            if (maxAgeMs != null && (nowMs - ts) > maxAgeMs) continue;
+            entries.add({'ts': ts, 'line': oldLine});
+          }
+        }
+      } catch (_) {}
+    }
+    entries.add({'ts': nowMs, 'line': line});
+    final capped = entries.length > 500
+        ? entries.sublist(entries.length - 500)
+        : entries;
+    await _writeLogEntries(file, capped);
+  }
+
+  Future<void> clearLogHistory(String channel) async {
+    final file = File(p.join(logsDirectory, '${channel}_history.json'));
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  Future<void> _writeLogEntries(File file, List<Map<String, Object?>> entries) async {
+    await file.writeAsString(
+      '${const JsonEncoder.withIndent('  ').convert(entries)}\n',
+      encoding: utf8,
+      flush: true,
+    );
   }
 
   bool _isSafeTemplateId(String id) =>
