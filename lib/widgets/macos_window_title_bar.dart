@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
 
 class MacOsWindowTitleBar extends StatefulWidget {
   const MacOsWindowTitleBar({
@@ -19,38 +19,60 @@ class MacOsWindowTitleBar extends StatefulWidget {
   State<MacOsWindowTitleBar> createState() => _MacOsWindowTitleBarState();
 }
 
-class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> {
-  static const MethodChannel _channel = MethodChannel('codebridge/window_controls');
+class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> with WindowListener {
   bool _hoveringGroup = false;
   bool _isMaximized = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshMaximized();
+    if (Platform.isWindows) {
+      windowManager.addListener(this);
+      _refreshMaximized();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isWindows) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowMaximize() {
+    if (mounted) setState(() => _isMaximized = true);
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    if (mounted) setState(() => _isMaximized = false);
   }
 
   Future<void> _refreshMaximized() async {
     if (!Platform.isWindows) return;
     try {
-      final res = await _channel.invokeMethod<bool>('isMaximized');
-      if (mounted && res != null) {
-        setState(() => _isMaximized = res);
-      }
+      final res = await windowManager.isMaximized();
+      if (mounted) setState(() => _isMaximized = res);
     } catch (_) {}
   }
 
   Future<void> _minimize() async {
     if (!Platform.isWindows) return;
     try {
-      await _channel.invokeMethod<void>('minimize');
+      await windowManager.minimize();
     } catch (_) {}
   }
 
   Future<void> _toggleMaximize() async {
     if (!Platform.isWindows) return;
     try {
-      await _channel.invokeMethod<void>('toggleMaximize');
+      if (await windowManager.isMaximized()) {
+        await windowManager.unmaximize();
+      } else {
+        await windowManager.maximize();
+      }
       await _refreshMaximized();
     } catch (_) {}
   }
@@ -58,15 +80,14 @@ class _MacOsWindowTitleBarState extends State<MacOsWindowTitleBar> {
   Future<void> _close() async {
     if (!Platform.isWindows) return;
     try {
-      await _channel.invokeMethod<void>('close');
+      await windowManager.close();
     } catch (_) {}
   }
 
   Future<void> _startDrag() async {
     if (!Platform.isWindows) return;
     try {
-      await _channel.invokeMethod<void>('startDrag');
-      await _refreshMaximized();
+      await windowManager.startDragging();
     } catch (_) {}
   }
 

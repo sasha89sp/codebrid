@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.48';
-  static const int currentBuildNumber = 48;
+  static const String currentVersion = '2.1.49';
+  static const int currentBuildNumber = 49;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.49',
+      buildNumber: 49,
+      title: 'Исправлен ввод текста и клавиатурный фокус в диалогах на Windows',
+      summary: 'Переведён безрамочный заголовок окна на штатный TitleBarStyle.hidden в window_manager без перехвата WM_NCCALCSIZE/WM_NCHITTEST в flutter_window.cpp, восстановив нормальный ввод с клавиатуры в полях диалогов и редакторе шаблонов.',
+      changes: [
+        'Убран низкоуровневый перехват WM_NCCALCSIZE/WM_NCHITTEST в windows/runner/flutter_window.cpp, ломавший клавиатурный фокус в диалогах Windows',
+        'Включён TitleBarStyle.hidden и управление окном через window_manager в MacOsWindowTitleBar',
+        'Улучшено получение фокуса в полях названия и текста в TemplateManagerDialog и обновлена версия до 2.1.49+49',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.48',
       buildNumber: 48,
@@ -96,17 +107,6 @@ class AppVersion {
         'Вынесен TemplateManagerDialog в lib/widgets/template_manager_dialog.dart с явным управлением состоянием черновика нового шаблона',
         'Исправлено выделение/редактирование названия и текста нового шаблона с сохранением через provider.saveTemplate',
         'Обновлена карта модулей MAP.md и версия сборки до 2.1.42+42',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.41',
-      buildNumber: 41,
-      title: 'Журнал распаковки в стиле авто-деплоя, ротация _history и автозапуск .exe',
-      summary: 'Журнал распаковки оформлен в едином тёмном стиле с журналом авто-деплоя, добавлены ротация _history, бережная обработка занятых файлов и опциональный запуск .exe.',
-      changes: [
-        'Добавлен журнал распаковки в стиле консоли авто-деплоя (0xFF141A26, Consolas, кнопка «Очистить») и статус последней проверки GitHub',
-        'Добавлена ротация копий в _history (buildHistoryKeepCount) и бережная обработка занятых файлов при распаковке',
-        'Добавлен опциональный автозапуск найденного .exe после обновления папки current (buildAutoLaunchExe)',
       ],
     ),
   ];

@@ -60,7 +60,7 @@ Future<void> main(List<String> args) async {
     title: 'CodeBridge Mini 2.1',
     backgroundColor: const Color(0xFFF5F7FB),
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: Platform.isWindows ? TitleBarStyle.hidden : TitleBarStyle.normal,
   );
 
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
