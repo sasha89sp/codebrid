@@ -136,9 +136,16 @@ class _TemplateManagerScreenState extends State<TemplateManagerScreen> {
         _isDraftNew = false;
         _error = 'Шаблон сохранён.';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Шаблон «${updated.name}» сохранён.')),
+      );
     } catch (error) {
       if (mounted) {
-        setState(() => _error = 'Не удалось сохранить: $error');
+        final msg = 'Не удалось сохранить: $error';
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
       }
     } finally {
       if (mounted) {
@@ -317,6 +324,8 @@ class _TemplateManagerScreenState extends State<TemplateManagerScreen> {
                             controller: _nameController,
                             enabled: selected != null && !_saving,
                             readOnly: false,
+                            autocorrect: false,
+                            enableSuggestions: false,
                             maxLines: 1,
                             onChanged: (_) {
                               if (_error.isNotEmpty) {
@@ -356,6 +365,8 @@ class _TemplateManagerScreenState extends State<TemplateManagerScreen> {
                               controller: _contentController,
                               enabled: selected != null && !_saving,
                               readOnly: false,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               expands: true,
                               minLines: null,
                               maxLines: null,

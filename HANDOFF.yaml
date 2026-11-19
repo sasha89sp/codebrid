@@ -1,15 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.51: рабочий ввод текста в редакторе шаблонов AGENT.md"
+current_stage: "Релиз 2.1.52: обратная связь при сохранении шаблонов и отключение автоподсказок"
 
 completed:
-  - "Переведена библиотека шаблонов из модального Dialog на полноценный экран Scaffold в lib/widgets/template_manager_dialog.dart"
-  - "Обновлена версия до 2.1.51+51 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлены SnackBar-уведомления при сохранении/ошибках и отключены autocorrect/enableSuggestions в TemplateManagerScreen"
+  - "Обновлена версия до 2.1.52+52 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions и ввод текста при создании/редактировании шаблона в приложении"
+  - "Проверить сборку 2.1.52 на GitHub Actions и редактирование/сохранение шаблонов в приложении"
 
 next_step: >
-  Залить архив 2.1.51 в репозиторий, собрать на GitHub и проверить ввод текста в редакторе шаблонов.
+  Залить архив 2.1.52 в репозиторий и проверить работу редактора шаблонов после сохранения.

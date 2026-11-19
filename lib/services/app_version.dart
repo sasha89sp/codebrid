@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.51';
-  static const int currentBuildNumber = 51;
+  static const String currentVersion = '2.1.52';
+  static const int currentBuildNumber = 52;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.52',
+      buildNumber: 52,
+      title: 'Уведомления о сохранении/ошибках и отключение автоподсказок в редакторе шаблонов',
+      summary: 'В экран библиотеки шаблонов добавлены SnackBar-уведомления при сохранении и ошибках записи, а также отключены автоподсказки/автокоррекция в полях ввода.',
+      changes: [
+        'Добавлены SnackBar-уведомления при успешном сохранении и при ошибке сохранения шаблона',
+        'Отключены autocorrect и enableSuggestions в полях названия и текста шаблона',
+        'Обновлена версия до 2.1.52+52 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.51',
       buildNumber: 51,
@@ -96,17 +107,6 @@ class AppVersion {
         'Добавлен виджет MacOsWindowTitleBar с кнопками закрытия, сворачивания и разворачивания/восстановления окна и перетаскиванием заголовка',
         'Настроен Win32-обработчик окна в windows/runner/flutter_window.cpp с сохранением рамки изменения размера и команд окна Windows',
         'Обновлена версия до 2.1.45+45 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.44',
-      buildNumber: 44,
-      title: 'Исправлены ошибки и замечания flutter analyze в релизе 2.1.43',
-      summary: 'Исправлены модификаторы методов расширения в build_bundle_service.dart, объявления полей и структура Column в build_capture_tab.dart, а также удалён неиспользуемый импорт в home_screen.dart.',
-      changes: [
-        'Оформлены вспомогательные методы BuildBundleService в расширение без лишнего static и удалён неиспользуемый _clearDirectory',
-        'Добавлены поля _buildAutoLaunchExe и _buildHistoryKeepCount и исправлена структура Column для журнала распаковки в build_capture_tab.dart',
-        'Удалён неиспользуемый импорт agent_template_item.dart в home_screen.dart',
       ],
     ),
   ];
