@@ -21,6 +21,7 @@ import '../services/window_size_listener.dart';
 import '../widgets/auto_deploy_tab.dart';
 import '../widgets/build_capture_tab.dart';
 import '../widgets/compact_app_menu.dart';
+import '../widgets/files_to_prompt_dialog.dart';
 import '../widgets/home_shortcuts.dart';
 import '../widgets/section_header.dart';
 
@@ -73,7 +74,7 @@ class HomeScreen extends StatelessWidget {
             ),
             actions: [
               TextButton.icon(
-                onPressed: () => _showFilesToPromptDialog(context),
+                onPressed: () => showFilesToPromptDialog(context),
                 icon: const Icon(Icons.code_rounded, size: 18),
                 label: const Text('Файлы → текст для ИИ'),
               ),
@@ -94,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                 provider: provider,
                 windowSizeListener: windowSizeListener,
                 onNewProject: () => _showCreateProjectDialog(context, provider),
-                onFilesToPrompt: () => _showFilesToPromptDialog(context),
+                onFilesToPrompt: () => showFilesToPromptDialog(context),
                 onAbout: () => _showAboutDialog(context, provider),
                 onOpenFolder: (folder) => _openFolder(context, folder),
                 onSelectTab: (tabId) {
@@ -986,183 +987,6 @@ class _MessageBanner extends StatelessWidget {
       padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(color: isError ? const Color(0xFFFFF1F0) : const Color(0xFFECF8F2), borderRadius: BorderRadius.circular(9)),
       child: Row(children: [Icon(isError ? Icons.error_outline : Icons.info_outline, size: 17, color: color), const SizedBox(width: 8), Expanded(child: Text(message, style: TextStyle(fontSize: 12, color: color))) ]),
-    );
-  }
-}
-
-Future<void> _showFilesToPromptDialog(BuildContext context) async {
-  await showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => const _FilesToPromptDialog(),
-  );
-}
-
-class _FilesToPromptDialog extends StatefulWidget {
-  const _FilesToPromptDialog();
-
-  @override
-  State<_FilesToPromptDialog> createState() => _FilesToPromptDialogState();
-}
-
-class _FilesToPromptDialogState extends State<_FilesToPromptDialog> {
-  final TextEditingController _textController = TextEditingController();
-  bool _working = false;
-  String _status = 'Выберите отдельные файлы или папку проекта.';
-  int _included = 0;
-  List<String> _skipped = <String>[];
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadFiles({required bool directory}) async {
-    try {
-      List<String>? selectedFiles;
-      String? selectedDirectory;
-      if (directory) {
-        selectedDirectory = await FilePicker.platform.getDirectoryPath(
-          dialogTitle: 'Выберите папку проекта',
-        );
-        if (selectedDirectory == null) return;
-      } else {
-        final result = await FilePicker.platform.pickFiles(
-          dialogTitle: 'Выберите файлы для отправки нейросети',
-          allowMultiple: true,
-          withData: false,
-          type: FileType.any,
-        );
-        if (result == null || result.files.isEmpty) return;
-        selectedFiles = result.files.map((item) => item.path).whereType<String>().toList();
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _working = true;
-        _status = 'Читаю файлы и формирую текст…';
-        _textController.clear();
-        _included = 0;
-        _skipped = <String>[];
-      });
-
-      final result = directory
-          ? await FilesToPrompt.fromDirectory(selectedDirectory!)
-          : await FilesToPrompt.fromFiles(selectedFiles!);
-      if (!mounted) return;
-      setState(() {
-        _textController.text = result.text;
-        _included = result.included;
-        _skipped = result.skipped;
-        _status = 'Готово: добавлено файлов — ${result.included}. Можно копировать текст или сохранить его в TXT.';
-      });
-    } catch (error) {
-      if (mounted) setState(() => _status = 'Ошибка: $error');
-    } finally {
-      if (mounted) setState(() => _working = false);
-    }
-  }
-
-  Future<void> _saveText() async {
-    if (_textController.text.isEmpty) return;
-    try {
-      final path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Сохранить текст для ИИ',
-        fileName: 'project_files_for_ai.txt',
-        type: FileType.custom,
-        allowedExtensions: const ['txt'],
-      );
-      if (path == null) return;
-      await File(path).writeAsString(_textController.text, encoding: utf8, flush: true);
-      if (mounted) setState(() => _status = 'Текст сохранён: $path');
-    } catch (error) {
-      if (mounted) setState(() => _status = 'Не удалось сохранить файл: $error');
-    }
-  }
-
-  Future<void> _copyText() async {
-    if (_textController.text.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: _textController.text));
-    if (mounted) setState(() => _status = 'Текст скопирован. Вставьте его в запрос к нейросети.');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(children: [
-        Icon(Icons.code_rounded),
-        SizedBox(width: 10),
-        Expanded(child: Text('Файлы → текст для ИИ')),
-      ]),
-      content: SizedBox(
-        width: 820,
-        height: 610,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Выберите папку целиком или несколько файлов. Текстовые файлы объединяются с путями и маркерами <<<FILE>>>. Скрытые служебные каталоги и бинарные файлы пропускаются; лимит — 2 МБ на файл и 12 МБ на весь результат.',
-              style: TextStyle(color: Color(0xFF68758B), height: 1.4),
-            ),
-            const SizedBox(height: 14),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              FilledButton.icon(
-                onPressed: _working ? null : () => _loadFiles(directory: true),
-                icon: const Icon(Icons.folder_open_rounded, size: 18),
-                label: const Text('Выбрать папку'),
-              ),
-              OutlinedButton.icon(
-                onPressed: _working ? null : () => _loadFiles(directory: false),
-                icon: const Icon(Icons.attach_file_rounded, size: 18),
-                label: const Text('Выбрать файлы'),
-              ),
-              if (_textController.text.isNotEmpty)
-                TextButton.icon(
-                  onPressed: _working ? null : () => setState(() { _textController.clear(); _included = 0; _skipped = <String>[]; _status = 'Выберите файлы или папку проекта.'; }),
-                  icon: const Icon(Icons.clear_rounded, size: 17),
-                  label: const Text('Очистить'),
-                ),
-            ]),
-            const SizedBox(height: 10),
-            Row(children: [
-              if (_working) ...[
-                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                const SizedBox(width: 9),
-              ],
-              Expanded(child: Text(_status, style: const TextStyle(fontSize: 12, color: Color(0xFF68758B)))),
-              if (_included > 0) Text('Файлов: $_included', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            ]),
-            if (_skipped.isNotEmpty) ...[
-              const SizedBox(height: 5),
-              Text('Пропущено: ${_skipped.take(5).join('; ')}${_skipped.length > 5 ? ' и ещё ${_skipped.length - 5}' : ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF9A7132))),
-            ],
-            const SizedBox(height: 10),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                expands: true,
-                minLines: null,
-                maxLines: null,
-                readOnly: false,
-                textAlignVertical: TextAlignVertical.top,
-                style: const TextStyle(fontFamily: 'Consolas', fontSize: 11.5, height: 1.45),
-                decoration: const InputDecoration(
-                  hintText: 'Здесь появится объединённое содержимое выбранных файлов…',
-                  alignLabelWithHint: true,
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: _working ? null : () => Navigator.of(context).pop(), child: const Text('Закрыть')),
-        OutlinedButton.icon(onPressed: _working || _textController.text.isEmpty ? null : _saveText, icon: const Icon(Icons.save_alt_rounded, size: 17), label: const Text('Сохранить TXT')),
-        FilledButton.icon(onPressed: _working || _textController.text.isEmpty ? null : _copyText, icon: const Icon(Icons.copy_rounded, size: 17), label: const Text('Копировать для ИИ')),
-      ],
     );
   }
 }

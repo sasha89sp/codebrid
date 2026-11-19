@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.37+37
+- Вынесен диалог «Файлы → текст для ИИ» в `lib/widgets/files_to_prompt_dialog.dart`, логика фонового опроса сборок GitHub выделена в `GitHubBuildPollingCoordinator` (`lib/services/github_build_polling_service.dart`), а список релизов в `AppVersion` сокращён до последних ключевых версий.
+
 ## 2.1.36+36
 - Обновлены `AGENTS.md`, `ROOT_MAP.md` и `MAP.md`, а горячие клавиши вынесены в отдельный виджет `lib/widgets/home_shortcuts.dart` для снижения разрастания `lib/screens/home_screen.dart`.
 
