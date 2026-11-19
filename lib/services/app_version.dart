@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.31';
-  static const int currentBuildNumber = 31;
+  static const String currentVersion = '2.1.32';
+  static const int currentBuildNumber = 32;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.32',
+      buildNumber: 32,
+      title: 'Горячие клавиши, сохранение статуса сборок GitHub и кнопка папки версий ZIP',
+      summary: 'Реализованы глобальные горячие клавиши, сохранение ID обработанных сборок GitHub между перезапусками, фильтр имени при автоскачивании, актуальная версия в трее и кнопка открытия папки версий ZIP.',
+      changes: [
+        'Добавлены горячие клавиши Ctrl+N, Ctrl+, и Ctrl+Q и синхронизация переключения вкладок из меню',
+        'Сохраняется lastFetchedBuildSources в settings.json и учитывается buildZipFilter / buildTakeAllPublicBuilds при скачивании с GitHub',
+        'Обновлён тултип трея на актуальную версию AppVersion и добавлена кнопка «Папка версий ZIP» во вкладку «Авто-деплой»',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.31',
       buildNumber: 31,

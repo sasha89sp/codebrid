@@ -15,6 +15,7 @@ class AppSettings {
     this.autoBackupIntervalMinutes = 30,
     this.backupDirectory,
     this.lastAutoBackupAt,
+    this.lastFetchedBuildSources = const <String, String>{},
   });
 
   final String? lastProjectId;
@@ -32,6 +33,7 @@ class AppSettings {
   final int autoBackupIntervalMinutes;
   final String? backupDirectory;
   final String? lastAutoBackupAt;
+  final Map<String, String> lastFetchedBuildSources;
 
   AppSettings copyWith({
     String? lastProjectId,
@@ -49,6 +51,7 @@ class AppSettings {
     int? autoBackupIntervalMinutes,
     String? backupDirectory,
     String? lastAutoBackupAt,
+    Map<String, String>? lastFetchedBuildSources,
   bool clearBackupDirectory = false,    bool clearLastProject = false,
   }) {
     return AppSettings(
@@ -67,6 +70,7 @@ class AppSettings {
       autoBackupIntervalMinutes: autoBackupIntervalMinutes ?? this.autoBackupIntervalMinutes,
       backupDirectory: clearBackupDirectory ? null : (backupDirectory ?? this.backupDirectory),
       lastAutoBackupAt: lastAutoBackupAt ?? this.lastAutoBackupAt,
+      lastFetchedBuildSources: lastFetchedBuildSources ?? this.lastFetchedBuildSources,
     );
   }
 
@@ -86,6 +90,7 @@ class AppSettings {
         'autoBackupIntervalMinutes': autoBackupIntervalMinutes,
         'backupDirectory': backupDirectory,
         'lastAutoBackupAt': lastAutoBackupAt,
+        'lastFetchedBuildSources': lastFetchedBuildSources,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -107,6 +112,11 @@ class AppSettings {
       autoBackupIntervalMinutes: (json['autoBackupIntervalMinutes'] as num?)?.toInt() ?? 30,
       backupDirectory: json['backupDirectory'] as String?,
       lastAutoBackupAt: json['lastAutoBackupAt'] as String?,
-    );
+      lastFetchedBuildSources: (json['lastFetchedBuildSources'] is Map)
+          ? (json['lastFetchedBuildSources'] as Map).map(
+              (k, v) => MapEntry(k.toString(), v.toString()),
+            )
+          : const <String, String>{},
+    );    );
   }
 }

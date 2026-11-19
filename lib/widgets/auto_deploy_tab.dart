@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/code_project.dart';
+import 'dart:io';
+
 import '../providers/project_provider.dart';
 import 'section_header.dart';
 
@@ -269,6 +271,18 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                       onPressed: () => _saveProjectSettings(provider),
                       icon: const Icon(Icons.save_outlined, size: 18),
                       label: const Text('Сохранить настройки'),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final dirPath = provider.zipVersionsDirectoryFor(project);
+                        await Directory(dirPath).create(recursive: true);
+                        if (Platform.isWindows) {
+                          await Process.run('explorer.exe', <String>[dirPath]);
+                        }
+                      },
+                      icon: const Icon(Icons.folder_zip_outlined, size: 18),
+                      label: const Text('Папка версий ZIP'),
                     ),
                     const SizedBox(width: 10),
                     OutlinedButton.icon(

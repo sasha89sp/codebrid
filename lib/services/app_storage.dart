@@ -379,6 +379,13 @@ class AppStorage {
     await saveSettings(current.copyWith(lastAutoBackupAt: isoTimestamp));
   }
 
+  Future<void> saveLastFetchedBuildSource(String projectId, String sourceId) async {
+    final current = await loadSettings();
+    final updated = Map<String, String>.from(current.lastFetchedBuildSources)
+      ..[projectId] = sourceId;
+    await saveSettings(current.copyWith(lastFetchedBuildSources: updated));
+  }
+
   Future<void> updateProject(CodeProject project) async {
     final projectJson = project.toJson();
     projectJson['projectDirectory'] = p.relative(project.projectDirectory, from: dataDirectory);

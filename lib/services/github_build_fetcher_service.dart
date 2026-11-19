@@ -64,7 +64,14 @@ class GitHubBuildFetcherService {
     String token = '',
     required String downloadDirectory,
     String? lastProcessedId,
+    String zipFilter = '',
+    bool takeAllBuilds = true,
   }) async {
+    bool matchesFilter(String candidateName) {
+      final cleanFilter = zipFilter.trim().toLowerCase();
+      if (takeAllBuilds || cleanFilter.isEmpty) return true;
+      return candidateName.toLowerCase().contains(cleanFilter);
+    }
     final logs = <String>[];
     final repoApiBase = parseGitHubRepoUri(repoUrl);
     if (repoApiBase == null) {
@@ -165,7 +172,7 @@ class GitHubBuildFetcherService {
                     for (final entry in outerArchive) {
                       if (!entry.isFile) continue;
                       final lowerName = p.basename(entry.name).toLowerCase();
-                      if (lowerName.endsWith('.zip')) {
+                      if (lowerName.endsWith('.zip') && matchesFilter(p.basename(entry.name))) {
                         final safeZipName = p.basename(entry.name);
                         final outZipPath = p.join(outDir.path, safeZipName);
                         await File(outZipPath).writeAsBytes(entry.content as List<int>, flush: true);
@@ -217,7 +224,7 @@ class GitHubBuildFetcherService {
                 final name = (asset['name'] as String? ?? '').trim();
                 final dlUrl = asset['browser_download_url'] as String?;
                 if (name.isEmpty || dlUrl == null || dlUrl.isEmpty) continue;
-                if (!name.toLowerCase().endsWith('.zip')) continue;
+                if (!name.toLowerCase().endsWith('.zip') || !matchesFilter(name)) continue;
                 final bytes = await downloadBytes(Uri.parse(dlUrl), useAuth: cleanToken.isNotEmpty);
                 if (bytes == null || bytes.isEmpty) continue;
                 final outZipPath = p.join(outDir.path, name);

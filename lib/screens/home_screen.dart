@@ -100,9 +100,37 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 10),
             ],
           ),
-          body: provider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Row(
+          body: Shortcuts(
+            shortcuts: <ShortcutActivator, Intent>{
+              const SingleActivator(LogicalKeyboardKey.keyN, control: true): const _NewProjectIntent(),
+              const SingleActivator(LogicalKeyboardKey.comma, control: true): const _OpenSettingsIntent(),
+              const SingleActivator(LogicalKeyboardKey.keyQ, control: true): const _QuitAppIntent(),
+            },
+            child: Actions(
+              actions: <Type, Action<Intent>>{
+                _NewProjectIntent: CallbackAction<_NewProjectIntent>(
+                  onInvoke: (_) {
+                    if (!provider.isWorking) {
+                      unawaited(_showCreateProjectDialog(context, provider));
+                    }
+                    return null;
+                  },
+                ),
+                _OpenSettingsIntent: CallbackAction<_OpenSettingsIntent>(
+                  onInvoke: (_) {
+                    unawaited(_showAboutDialog(context, provider));
+                    return null;
+                  },
+                ),
+                _QuitAppIntent: CallbackAction<_QuitAppIntent>(
+                  onInvoke: (_) {
+                    exit(0);
+                  },
+                ),
+              },
+              child: provider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Row(
                   children: [
                     _ProjectSidebar(provider: provider),
                     const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE7EAF1)),
@@ -113,6 +141,8 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
         );
       },
     );
@@ -2252,4 +2282,16 @@ String _fileSize(File file) {
   } catch (_) {
     return 'Размер неизвестен';
   }
+}
+
+class _NewProjectIntent extends Intent {
+  const _NewProjectIntent();
+}
+
+class _OpenSettingsIntent extends Intent {
+  const _OpenSettingsIntent();
+}
+
+class _QuitAppIntent extends Intent {
+  const _QuitAppIntent();
 }

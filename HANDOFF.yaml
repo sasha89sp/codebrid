@@ -1,12 +1,14 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.31: восстановлены методы ProjectProvider и исправлены ошибки compact_app_menu.dart"
+current_stage: "Релиз 2.1.32: выполнены все пункты доработки"
 
 completed:
-  - "Восстановлены все методы ProjectProvider и исправлены ошибки/предупреждения анализатора в lib/widgets/compact_app_menu.dart"
-  - "Обновлена версия до 2.1.31+31 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлены горячие клавиши Ctrl+N, Ctrl+, и Ctrl+Q и синхронизация вкладок с меню"
+  - "Сохранён lastFetchedBuildSources между перезапусками и добавлен учёт фильтра имени при скачивании с GitHub"
+  - "Обновлён тултип трея на текущую версию AppVersion и добавлена кнопка «Папка версий ZIP»"
+  - "Обновлена версия до 2.1.32+32 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Запустить Build portable Windows x64 на GitHub и проверить прохождение Analyze Dart code"
+  - "Запустить сборку и проверить все пункты в релизе 2.1.32+32"
 
 next_step: >
-  Залить архив 2.1.31 в репозиторий и убедиться, что flutter analyze и сборка Windows проходят без ошибок.
+  Залить архив 2.1.32 в репозиторий и проверить работу горячих клавиш, автосборок GitHub и папки версий ZIP.

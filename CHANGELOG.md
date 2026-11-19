@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.32+32
+- Добавлены горячие клавиши (`Ctrl+N`, `Ctrl+,`, `Ctrl+Q`) и синхронизация переключения вкладок, сохранение обработанных источников сборок GitHub между перезапусками, учёт фильтра сборок при автоскачивании, актуальная версия в подсказке трея и кнопка открытия папки версий ZIP в «Авто-деплое».
+
 ## 2.1.31+31
 - Восстановлены методы `ProjectProvider` (`checkCurrentProjectGit`, `clearDeployLogs`, `dismissPendingBuild`, `confirmPendingBuild`, `createBackupNow`, `updateBackupSettings`, `restoreBackup`) и исправлены ошибки/подсказки анализатора в `lib/widgets/compact_app_menu.dart`.
 

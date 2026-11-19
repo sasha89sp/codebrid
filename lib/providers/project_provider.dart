@@ -93,6 +93,9 @@ class ProjectProvider extends ChangeNotifier {
       autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
       backupDirectory = settings.backupDirectory;
       lastAutoBackupAt = settings.lastAutoBackupAt;
+      _lastFetchedBuildSourceByProject
+        ..clear()
+        ..addAll(settings.lastFetchedBuildSources);
       _configureAutoBackupTimer();
       if (autoBackupEnabled) {
         unawaited(_runAutoBackupIfDue());
@@ -638,6 +641,8 @@ class ProjectProvider extends ChangeNotifier {
         token: githubToken,
         downloadDirectory: fetchDir,
         lastProcessedId: _lastFetchedBuildSourceByProject[proj.id],
+        zipFilter: proj.buildZipFilter,
+        takeAllBuilds: proj.buildTakeAllPublicBuilds,
       );
       for (final line in res.logs) {
         _appendDeployLog(line);
@@ -647,6 +652,7 @@ class ProjectProvider extends ChangeNotifier {
       }
       for (final item in res.fetchedZips) {
         _lastFetchedBuildSourceByProject[proj.id] = item.sourceId;
+        await storage.saveLastFetchedBuildSource(proj.id, item.sourceId);
         if (proj.buildCaptureEnabled) {
           final baseBuildsDir = proj.buildTargetDirectory.trim().isNotEmpty
               ? proj.buildTargetDirectory.trim()
@@ -926,6 +932,13 @@ class ProjectProvider extends ChangeNotifier {
     deployLogs.clear();
     lastDeployStatus = null;
     notifyListeners();
+  }
+
+  String zipVersionsDirectoryFor(CodeProject project) {
+    if (project.zipArchiveFolder.trim().isNotEmpty) {
+      return p.normalize(project.zipArchiveFolder.trim());
+    }
+    return p.normalize(p.join(project.outputPath, '_zip_versions'));
   }
 
   Future<void> reorderTabs(int oldIndex, int newIndex) async {

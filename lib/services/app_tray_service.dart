@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'app_version.dart';
+
 import 'window_size_listener.dart';
 
 class AppTrayService with TrayListener {
@@ -23,7 +25,7 @@ class AppTrayService with TrayListener {
     try {
       trayManager.addListener(this);
       await trayManager.setIcon(resolvedIconPath);
-      await trayManager.setToolTip('CodeBridge Mini 2.0');
+      await trayManager.setToolTip('CodeBridge Mini ${AppVersion.currentVersion}');
       await trayManager.setContextMenu(
         Menu(
           items: [
