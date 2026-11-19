@@ -225,24 +225,8 @@ class _ProjectWorkspace extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  project.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40)),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              IconButton(
-                                tooltip: 'Переименовать проект',
-                                onPressed: () => _showRenameProjectDialog(context, context.read<ProjectProvider>(), project),
-                                icon: const Icon(Icons.edit_outlined, size: 19),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
+                          Text(project.name, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40))),
+                          const SizedBox(height: 5),
                           Text(project.description.isEmpty ? 'Описание задачи не задано' : project.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF7C879A))),
                         ],
                       ),
@@ -802,97 +786,6 @@ class _FilesToPromptDialogState extends State<_FilesToPromptDialog> {
       ],
     );
   }
-}
-
-Future<void> _showRenameProjectDialog(
-  BuildContext context,
-  ProjectProvider provider,
-  CodeProject project,
-) async {
-  final controller = TextEditingController(text: project.name);
-  var saving = false;
-  var errorText = '';
-
-  await showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          return AlertDialog(
-            title: const Text('Переименовать проект'),
-            content: SizedBox(
-              width: 460,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text('Новое название проекта', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    readOnly: false,
-                    enabled: !saving,
-                    onChanged: (_) {
-                      if (errorText.isNotEmpty) setDialogState(() => errorText = '');
-                      setDialogState(() {});
-                    },
-                    decoration: const InputDecoration(hintText: 'Введите название проекта'),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Имя Flutter-пакета: ${provider.packageNameFor(controller.text)}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF69758B)),
-                  ),
-                  if (errorText.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text(errorText, style: const TextStyle(color: Color(0xFFB74444), fontSize: 12)),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
-                child: const Text('Отмена'),
-              ),
-              FilledButton(
-                onPressed: saving
-                    ? null
-                    : () async {
-                        final clean = controller.text.trim();
-                        if (clean.isEmpty) {
-                          setDialogState(() => errorText = 'Введите название проекта.');
-                          return;
-                        }
-                        setDialogState(() {
-                          saving = true;
-                          errorText = '';
-                        });
-                        try {
-                          await provider.renameCurrentProject(clean);
-                          if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                        } catch (error) {
-                          setDialogState(() {
-                            errorText = error.toString().replaceFirst('Bad state: ', '');
-                          });
-                        } finally {
-                          if (dialogContext.mounted) setDialogState(() => saving = false);
-                        }
-                      },
-                child: saving
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Сохранить'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-
-  controller.dispose();
 }
 
 Future<void> _showCreateProjectDialog(BuildContext context, ProjectProvider provider) async {

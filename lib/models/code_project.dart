@@ -15,6 +15,7 @@ class CodeProject {
     this.zipNameFilter = '',
     this.deleteZipAfterDeploy = false,
     this.cleanBeforeExtract = false,
+    this.autoSyncOnReject = true,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -39,6 +40,7 @@ class CodeProject {
   final String zipNameFilter;
   final bool deleteZipAfterDeploy;
   final bool cleanBeforeExtract;
+  final bool autoSyncOnReject;
 
   CodeProject copyWith({
     String? name,
@@ -53,6 +55,7 @@ class CodeProject {
     String? zipNameFilter,
     bool? deleteZipAfterDeploy,
     bool? cleanBeforeExtract,
+    bool? autoSyncOnReject,
   }) {
     return CodeProject(
       id: id,
@@ -70,6 +73,7 @@ class CodeProject {
       zipNameFilter: zipNameFilter ?? this.zipNameFilter,
       deleteZipAfterDeploy: deleteZipAfterDeploy ?? this.deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract ?? this.cleanBeforeExtract,
+      autoSyncOnReject: autoSyncOnReject ?? this.autoSyncOnReject,
     );
   }
 
@@ -89,6 +93,7 @@ class CodeProject {
         'zipNameFilter': zipNameFilter,
         'deleteZipAfterDeploy': deleteZipAfterDeploy,
         'cleanBeforeExtract': cleanBeforeExtract,
+        'autoSyncOnReject': autoSyncOnReject,
       };
 
   factory CodeProject.fromJson(
@@ -115,6 +120,7 @@ class CodeProject {
       zipNameFilter: (json['zipNameFilter'] as String? ?? '').trim(),
       deleteZipAfterDeploy: json['deleteZipAfterDeploy'] == true,
       cleanBeforeExtract: json['cleanBeforeExtract'] == true,
+      autoSyncOnReject: json['autoSyncOnReject'] != false,
     );
   }
 

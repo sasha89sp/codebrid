@@ -1,12 +1,12 @@
 status: ready_for_verification
-current_stage: "Редактирование названия проекта и полей ввода поверх базы 2.1.1"
+current_stage: "Авто-синхронизация ветки с GitHub при отклонении push поверх базы 2.1.1"
 
 completed:
-  - "Добавлено переименование проекта в шапке workspace (_showRenameProjectDialog, ProjectProvider.renameCurrentProject, AppStorage.renameProject)"
-  - "Сохранены ручное редактирование AGENT.md и авто-деплой базы 2.1.1"
+  - "Добавлена авто-синхронизация с origin/<branch> (pull --rebase / merge --allow-unrelated-histories + повторный push) в GitService.deployDirectory при отказе non-fast-forward"
+  - "Добавлена настройка autoSyncOnReject в CodeProject, ProjectProvider и чекбокс во вкладке «Авто-деплой»"
 
 pending:
-  - "Собрать обновлённую версию на Windows и проверить редактирование названия проекта, путей и текста"
+  - "Синхронизировать текущую папку output проекта CodeBridgeMin с GitHub и пересобрать приложение на Windows"
 
 next_step: >
-  Распаковать архив, выполнить flutter analyze и flutter test, собрать Windows-версию и проверить редактирование полей.
+  Выполнить синхронизацию ветки main в папке output, пересобрать приложение из нового архива и проверить авто-деплой при расхождении истории.

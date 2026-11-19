@@ -23,6 +23,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _autoDeployEnabled = false;
   bool _deleteZipAfterDeploy = false;
   bool _cleanBeforeExtract = false;
+  bool _autoSyncOnReject = true;
 
   @override
   void dispose() {
@@ -45,6 +46,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       _autoDeployEnabled = project.autoDeployEnabled;
       _deleteZipAfterDeploy = project.deleteZipAfterDeploy;
       _cleanBeforeExtract = project.cleanBeforeExtract;
+      _autoSyncOnReject = project.autoSyncOnReject;
     }
   }
 
@@ -77,6 +79,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       zipNameFilter: _filterController.text,
       deleteZipAfterDeploy: _deleteZipAfterDeploy,
       cleanBeforeExtract: _cleanBeforeExtract,
+      autoSyncOnReject: _autoSyncOnReject,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -224,6 +227,14 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                   value: _deleteZipAfterDeploy,
                   onChanged: (bool? value) =>
                       setState(() => _deleteZipAfterDeploy = value ?? false),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Автоматически синхронизировать ветку с GitHub при отклонении push (pull / merge)'),
+                  value: _autoSyncOnReject,
+                  onChanged: (bool? value) =>
+                      setState(() => _autoSyncOnReject = value ?? true),
                 ),
                 const SizedBox(height: 12),
                 Row(
