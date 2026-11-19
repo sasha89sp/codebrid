@@ -1654,17 +1654,6 @@ Future<void> _writeFiles(BuildContext context, ProjectProvider provider) async {
   }
 }
 
-Future<void> _openFolder(BuildContext context, String folder) async {
-  try {
-    await Directory(folder).create(recursive: true);
-    if (Platform.isWindows) {
-      await Process.start('explorer.exe', [folder]);
-    }
-  } catch (error) {
-    if (context.mounted) _showSnack(context, 'Не удалось открыть папку: $error');
-  }
-}
-
 void _showSnack(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
 }

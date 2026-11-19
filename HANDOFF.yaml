@@ -1,13 +1,11 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.11: исправлены замечания flutter analyze в Build portable Windows x64"
+current_stage: "Релиз 2.1.12: удалено дублирующее определение _openFolder в home_screen.dart"
 
 completed:
-  - "Удалён неиспользуемый импорт build_capture_tab.dart из lib/screens/home_screen.dart (unused_import)"
-  - "Упорядочены проверки mounted и context.mounted после async-вызова в _saveManualAgent (use_build_context_synchronously)"
-  - "Удалено неиспользуемое поле _shownPendingZipPath из lib/widgets/auto_deploy_tab.dart (unused_field)"
+  - "Удалено дублирующее определение функции _openFolder (duplicate_definition) в lib/screens/home_screen.dart"
 
 pending:
-  - "Запустить Build portable Windows x64 на GitHub и проверить сборку релиза 2.1.11"
+  - "Запустить Build portable Windows x64 на GitHub и проверить сборку релиза 2.1.12"
 
 next_step: >
-  Залить архив 2.1.11 в репозиторий и убедиться, что шаг Analyze Dart code и сборка Windows проходят успешно.
+  Залить архив 2.1.12 в репозиторий и убедиться, что Analyze Dart code и сборка Windows проходят без ошибок.
