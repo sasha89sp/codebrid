@@ -41,10 +41,10 @@ Future<void> main(List<String> args) async {
   final settings = await storage.loadSettings();
 
   await windowManager.ensureInitialized();
+  final windowSizeListener = WindowSizeListener(storage);
   final trayService = AppTrayService()..windowSizeListener = windowSizeListener;
   await trayService.initialize(p.join(storage.applicationDirectory, 'tray.ico'));
 
-  final windowSizeListener = WindowSizeListener(storage);
   final windowCloseListener = AppWindowCloseListener(trayService, windowSizeListener: windowSizeListener);
   windowManager.addListener(windowCloseListener);
   windowManager.addListener(windowSizeListener);

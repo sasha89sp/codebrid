@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.33+33
+- Исправлены ошибки и предупреждения анализатора (`referenced_before_declaration` в `lib/main.dart`, `duplicate_definition` `clearDeployLogs` в `lib/providers/project_provider.dart` и `deprecated_export_use` `BytesBuilder` в `lib/services/github_build_fetcher_service.dart`).
+
 ## 2.1.32+32
 - Добавлены горячие клавиши (`Ctrl+N`, `Ctrl+,`, `Ctrl+Q`) и синхронизация переключения вкладок, сохранение обработанных источников сборок GitHub между перезапусками, учёт фильтра сборок при автоскачивании, актуальная версия в подсказке трея и кнопка открытия папки версий ZIP в «Авто-деплое».
 

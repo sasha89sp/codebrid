@@ -1,14 +1,14 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.32: выполнены все пункты доработки"
+current_stage: "Релиз 2.1.33: исправлены ошибки анализатора в main.dart, project_provider.dart и github_build_fetcher_service.dart"
 
 completed:
-  - "Добавлены горячие клавиши Ctrl+N, Ctrl+, и Ctrl+Q и синхронизация вкладок с меню"
-  - "Сохранён lastFetchedBuildSources между перезапусками и добавлен учёт фильтра имени при скачивании с GitHub"
-  - "Обновлён тултип трея на текущую версию AppVersion и добавлена кнопка «Папка версий ZIP»"
-  - "Обновлена версия до 2.1.32+32 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Исправлен порядок объявления windowSizeListener в lib/main.dart"
+  - "Удалён дубликат clearDeployLogs в lib/providers/project_provider.dart"
+  - "Добавлен импорт dart:typed_data в lib/services/github_build_fetcher_service.dart"
+  - "Обновлена версия до 2.1.33+33 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Запустить сборку и проверить все пункты в релизе 2.1.32+32"
+  - "Запустить Build portable Windows x64 на GitHub и убедиться, что flutter analyze проходит без ошибок"
 
 next_step: >
-  Залить архив 2.1.32 в репозиторий и проверить работу горячих клавиш, автосборок GitHub и папки версий ZIP.
+  Залить архив 2.1.33 в репозиторий и проверить прохождение Analyze Dart code и сборку Windows.

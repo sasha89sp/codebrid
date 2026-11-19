@@ -1069,11 +1069,6 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
-  void clearDeployLogs() {
-    deployLogs.clear();
-    lastDeployStatus = null;
-    notifyListeners();
-  }
 
   void _appendDeployLog(String message) {
     final now = DateTime.now();

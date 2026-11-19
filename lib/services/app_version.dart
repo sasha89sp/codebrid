@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.32';
-  static const int currentBuildNumber = 32;
+  static const String currentVersion = '2.1.33';
+  static const int currentBuildNumber = 33;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.33',
+      buildNumber: 33,
+      title: 'Исправлены ошибки анализатора в main.dart, project_provider.dart и github_build_fetcher_service.dart',
+      summary: 'Устранён порядок объявления windowSizeListener в main.dart, удалён дубликат clearDeployLogs в project_provider.dart и добавлен прямой импорт dart:typed_data.',
+      changes: [
+        'Исправлен порядок объявления windowSizeListener перед AppWindowCloseListener в lib/main.dart',
+        'Удалено повторное объявление clearDeployLogs в lib/providers/project_provider.dart',
+        'Добавлен импорт dart:typed_data для BytesBuilder в lib/services/github_build_fetcher_service.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.32',
       buildNumber: 32,
