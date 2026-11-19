@@ -23,6 +23,10 @@ class _ProjectNotesTabState extends State<ProjectNotesTab> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
+  final FocusNode _newFolderFocusNode = FocusNode();
+  final FocusNode _titleFocusNode = FocusNode();
+  final FocusNode _contentFocusNode = FocusNode();
+
   String? _loadedProjectId;
   String _selectedFolderFilter = _allFilter;
   String? _selectedNoteId;
@@ -37,6 +41,9 @@ class _ProjectNotesTabState extends State<ProjectNotesTab> {
     _searchController.dispose();
     _titleController.dispose();
     _contentController.dispose();
+    _newFolderFocusNode.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
@@ -126,7 +133,11 @@ class _ProjectNotesTabState extends State<ProjectNotesTab> {
     });
   }
 
-  Future<void> _createNote(ProjectProvider provider, {bool isBugTemplate = false}) async {
+  Future<void> _createNote(
+    ProjectProvider provider, {
+    bool isBugTemplate = false,
+    bool focusContent = true,
+  }) async {
     final targetFolderId = (_selectedFolderFilter == _allFilter ||
             _selectedFolderFilter == _unfiledFilter)
         ? null
@@ -141,6 +152,14 @@ class _ProjectNotesTabState extends State<ProjectNotesTab> {
     if (!mounted || created == null) return;
     setState(() {
       _loadNoteIntoEditor(created);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (focusContent) {
+        _contentFocusNode.requestFocus();
+      } else {
+        _titleFocusNode.requestFocus();
+      }
     });
   }
 
@@ -206,483 +225,505 @@ class _ProjectNotesTabState extends State<ProjectNotesTab> {
         ? _editingNoteFolderId
         : null;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: SectionHeader(
-                  title: 'Заметки проекта «${project.name}»',
-                  subtitle:
-                      'Папки и заметки для багов, идей и чек-листов — привязаны только к этому проекту.',
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => unawaited(_createNote(provider, isBugTemplate: true)),
-                icon: const Icon(Icons.bug_report_outlined, size: 18),
-                label: const Text('Записать баг'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => unawaited(_createNote(provider)),
-                icon: const Icon(Icons.note_add_outlined, size: 18),
-                label: const Text('Новая заметка'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return FocusScope(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                // 1. Folders column
-                SizedBox(
-                  width: 220,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE4E9F2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Папки',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5,
-                                  color: Color(0xFF1F2A40),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'Создать папку',
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () {
-                                setState(() {
-                                  _isCreatingFolder = !_isCreatingFolder;
-                                  _newFolderController.clear();
-                                });
-                              },
-                              icon: const Icon(Icons.create_new_folder_outlined, size: 19),
-                            ),
-                          ],
-                        ),
-                        if (_isCreatingFolder) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _newFolderController,
-                                  autofocus: true,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Имя папки...',
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 9,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => unawaited(_submitNewFolder(provider)),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                tooltip: 'Создать',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => unawaited(_submitNewFolder(provider)),
-                                icon: const Icon(Icons.check_rounded, size: 18),
-                              ),
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: ListView(
-                            children: [
-                              _FolderTile(
-                                icon: Icons.notes_rounded,
-                                title: 'Все заметки',
-                                count: store.notes.length,
-                                selected: _selectedFolderFilter == _allFilter,
-                                onTap: () => setState(() => _selectedFolderFilter = _allFilter),
-                              ),
-                              _FolderTile(
-                                icon: Icons.inbox_outlined,
-                                title: 'Без папки',
-                                count: store.notes
-                                    .where((n) => n.folderId == null || n.folderId!.isEmpty)
-                                    .length,
-                                selected: _selectedFolderFilter == _unfiledFilter,
-                                onTap: () => setState(() => _selectedFolderFilter = _unfiledFilter),
-                              ),
-                              if (store.folders.isNotEmpty) ...[
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6),
-                                  child: Divider(height: 1),
-                                ),
-                                ...store.folders.map((folder) {
-                                  final count = store.notes
-                                      .where((n) => n.folderId == folder.id)
-                                      .length;
-                                  return _FolderTile(
-                                    icon: Icons.folder_outlined,
-                                    title: folder.name,
-                                    count: count,
-                                    selected: _selectedFolderFilter == folder.id,
-                                    onTap: () =>
-                                        setState(() => _selectedFolderFilter = folder.id),
-                                    onDelete: () =>
-                                        unawaited(provider.deleteProjectNoteFolder(folder.id)),
-                                  );
-                                }),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                Expanded(
+                  child: SectionHeader(
+                    title: 'Заметки проекта «${project.name}»',
+                    subtitle:
+                        'Папки и заметки для багов, идей и чек-листов — привязаны только к этому проекту.',
                   ),
                 ),
-                const SizedBox(width: 14),
-                // 2. Notes list column
-                SizedBox(
-                  width: 265,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE4E9F2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _searchController,
-                          onChanged: (_) => setState(() {}),
-                          decoration: InputDecoration(
-                            hintText: 'Поиск по заметкам...',
-                            prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 10,
-                            ),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.close_rounded, size: 16),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() {});
-                                    },
-                                  )
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: visibleNotes.isEmpty
-                              ? Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.sticky_note_2_outlined,
-                                          size: 32,
-                                          color: Color(0xFF9AA4B8),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'В этой папке пока нет заметок',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            color: Color(0xFF7B869B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        TextButton.icon(
-                                          onPressed: () => unawaited(_createNote(provider)),
-                                          icon: const Icon(Icons.add_rounded, size: 17),
-                                          label: const Text('Создать заметку'),
-                                        ),
-                                      ],
-                                    ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      unawaited(_createNote(provider, isBugTemplate: true, focusContent: true)),
+                  icon: const Icon(Icons.bug_report_outlined, size: 18),
+                  label: const Text('Записать баг'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () =>
+                      unawaited(_createNote(provider, isBugTemplate: false, focusContent: false)),
+                  icon: const Icon(Icons.note_add_outlined, size: 18),
+                  label: const Text('Новая заметка'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Folders column
+                  SizedBox(
+                    width: 220,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE4E9F2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Папки',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                    color: Color(0xFF1F2A40),
                                   ),
-                                )
-                              : ListView.separated(
-                                  itemCount: visibleNotes.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 6),
-                                  itemBuilder: (context, index) {
-                                    final item = visibleNotes[index];
-                                    final isSelected = item.id == _selectedNoteId;
-                                    final preview = item.content
-                                        .replaceAll('\n', ' ')
-                                        .trim();
-                                    return InkWell(
-                                      borderRadius: BorderRadius.circular(10),
-                                      onTap: () {
-                                        setState(() {
-                                          _loadNoteIntoEditor(item);
-                                        });
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Создать папку',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  final nextCreating = !_isCreatingFolder;
+                                  setState(() {
+                                    _isCreatingFolder = nextCreating;
+                                    _newFolderController.clear();
+                                  });
+                                  if (nextCreating) {
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      if (mounted) _newFolderFocusNode.requestFocus();
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.create_new_folder_outlined, size: 19),
+                              ),
+                            ],
+                          ),
+                          if (_isCreatingFolder) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _newFolderController,
+                                    focusNode: _newFolderFocusNode,
+                                    readOnly: false,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Имя папки...',
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 9,
+                                      ),
+                                    ),
+                                    onSubmitted: (_) => unawaited(_submitNewFolder(provider)),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  tooltip: 'Создать',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => unawaited(_submitNewFolder(provider)),
+                                  icon: const Icon(Icons.check_rounded, size: 18),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: ListView(
+                              children: [
+                                _FolderTile(
+                                  icon: Icons.notes_rounded,
+                                  title: 'Все заметки',
+                                  count: store.notes.length,
+                                  selected: _selectedFolderFilter == _allFilter,
+                                  onTap: () => setState(() => _selectedFolderFilter = _allFilter),
+                                ),
+                                _FolderTile(
+                                  icon: Icons.inbox_outlined,
+                                  title: 'Без папки',
+                                  count: store.notes
+                                      .where((n) => n.folderId == null || n.folderId!.isEmpty)
+                                      .length,
+                                  selected: _selectedFolderFilter == _unfiledFilter,
+                                  onTap: () =>
+                                      setState(() => _selectedFolderFilter = _unfiledFilter),
+                                ),
+                                if (store.folders.isNotEmpty) ...[
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 6),
+                                    child: Divider(height: 1),
+                                  ),
+                                  ...store.folders.map((folder) {
+                                    final count = store.notes
+                                        .where((n) => n.folderId == folder.id)
+                                        .length;
+                                    return _FolderTile(
+                                      icon: Icons.folder_outlined,
+                                      title: folder.name,
+                                      count: count,
+                                      selected: _selectedFolderFilter == folder.id,
+                                      onTap: () =>
+                                          setState(() => _selectedFolderFilter = folder.id),
+                                      onDelete: () =>
+                                          unawaited(provider.deleteProjectNoteFolder(folder.id)),
+                                    );
+                                  }),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // 2. Notes list column
+                  SizedBox(
+                    width: 265,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE4E9F2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            readOnly: false,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Поиск по заметкам...',
+                              prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 16),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {});
                                       },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? const Color(0xFFEEF2FF)
-                                              : const Color(0xFFF9FAFD),
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? Theme.of(context).colorScheme.primary
-                                                : const Color(0xFFE7ECF5),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: visibleNotes.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.sticky_note_2_outlined,
+                                            size: 32,
+                                            color: Color(0xFF9AA4B8),
                                           ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    item.title,
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 13,
-                                                      color: Color(0xFF1F2A40),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            'В этой папке пока нет заметок',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              color: Color(0xFF7B869B),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextButton.icon(
+                                            onPressed: () => unawaited(_createNote(provider)),
+                                            icon: const Icon(Icons.add_rounded, size: 17),
+                                            label: const Text('Создать заметку'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    itemCount: visibleNotes.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                                    itemBuilder: (context, index) {
+                                      final item = visibleNotes[index];
+                                      final isSelected = item.id == _selectedNoteId;
+                                      final preview = item.content
+                                          .replaceAll('\n', ' ')
+                                          .trim();
+                                      return InkWell(
+                                        borderRadius: BorderRadius.circular(10),
+                                        onTap: () {
+                                          setState(() {
+                                            _loadNoteIntoEditor(item);
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? const Color(0xFFEEF2FF)
+                                                : const Color(0xFFF9FAFD),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? Theme.of(context).colorScheme.primary
+                                                  : const Color(0xFFE7ECF5),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.title,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 13,
+                                                        color: Color(0xFF1F2A40),
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 6),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    _formatShortDate(item.updatedAt),
+                                                    style: const TextStyle(
+                                                      fontSize: 10.5,
+                                                      color: Color(0xFF8C96AA),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (preview.isNotEmpty) ...[
+                                                const SizedBox(height: 4),
                                                 Text(
-                                                  _formatShortDate(item.updatedAt),
+                                                  preview,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
                                                   style: const TextStyle(
-                                                    fontSize: 10.5,
-                                                    color: Color(0xFF8C96AA),
+                                                    fontSize: 11.5,
+                                                    color: Color(0xFF6B768B),
                                                   ),
                                                 ),
                                               ],
-                                            ),
-                                            if (preview.isNotEmpty) ...[
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                preview,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 11.5,
-                                                  color: Color(0xFF6B768B),
-                                                ),
-                                              ),
                                             ],
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                // 3. Inline note editor column
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE4E9F2)),
-                    ),
-                    child: selectedNote == null
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.edit_note_rounded,
-                                  size: 40,
-                                  color: Color(0xFF9AA4B8),
-                                ),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  'Выберите заметку слева или создайте новую',
-                                  style: TextStyle(
-                                    fontSize: 13.5,
-                                    color: Color(0xFF6F7B90),
+                  const SizedBox(width: 14),
+                  // 3. Inline note editor column
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE4E9F2)),
+                      ),
+                      child: selectedNote == null
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.edit_note_rounded,
+                                    size: 40,
+                                    color: Color(0xFF9AA4B8),
                                   ),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'Выберите заметку слева или создайте новую',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      color: Color(0xFF6F7B90),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      FilledButton.icon(
+                                        onPressed: () => unawaited(_createNote(provider)),
+                                        icon: const Icon(Icons.note_add_outlined, size: 18),
+                                        label: const Text('Новая заметка'),
+                                      ),
+                                      OutlinedButton.icon(
+                                        onPressed: () => unawaited(
+                                            _createNote(provider, isBugTemplate: true)),
+                                        icon: const Icon(Icons.bug_report_outlined, size: 18),
+                                        label: const Text('Записать баг'),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextField(
+                                        controller: _titleController,
+                                        focusNode: _titleFocusNode,
+                                        readOnly: false,
+                                        onTap: () {
+                                          if (!_titleFocusNode.hasFocus) {
+                                            _titleFocusNode.requestFocus();
+                                          }
+                                        },
+                                        onChanged: (_) {
+                                          if (!_hasDirtyChanges || _statusMessage.isNotEmpty) {
+                                            _hasDirtyChanges = true;
+                                            _statusMessage = '';
+                                          }
+                                        },
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          labelText: 'Заголовок заметки',
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      flex: 2,
+                                      child: DropdownButtonFormField<String?>(
+                                        value: validDropdownFolderId,
+                                        isExpanded: true,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Папка',
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                        ),
+                                        items: <DropdownMenuItem<String?>>[
+                                          const DropdownMenuItem<String?>(
+                                            value: null,
+                                            child: Text('Без папки'),
+                                          ),
+                                          ...store.folders.map(
+                                            (f) => DropdownMenuItem<String?>(
+                                              value: f.id,
+                                              child: Text(
+                                                f.name,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        onChanged: (String? newFolderId) {
+                                          setState(() {
+                                            _editingNoteFolderId = newFolderId;
+                                            _hasDirtyChanges = true;
+                                            _statusMessage = '';
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 8,
-                                  children: [
-                                    FilledButton.icon(
-                                      onPressed: () => unawaited(_createNote(provider)),
-                                      icon: const Icon(Icons.note_add_outlined, size: 18),
-                                      label: const Text('Новая заметка'),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _contentController,
+                                    focusNode: _contentFocusNode,
+                                    expands: true,
+                                    minLines: null,
+                                    maxLines: null,
+                                    readOnly: false,
+                                    textAlignVertical: TextAlignVertical.top,
+                                    onTap: () {
+                                      if (!_contentFocusNode.hasFocus) {
+                                        _contentFocusNode.requestFocus();
+                                      }
+                                    },
+                                    onChanged: (_) {
+                                      if (!_hasDirtyChanges || _statusMessage.isNotEmpty) {
+                                        _hasDirtyChanges = true;
+                                        _statusMessage = '';
+                                      }
+                                    },
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      height: 1.55,
+                                      color: Color(0xFF283246),
                                     ),
+                                    decoration: const InputDecoration(
+                                      hintText:
+                                          'Опишите баг, шаги воспроизведения, заметки по проекту или задачи...',
+                                      alignLabelWithHint: true,
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                if (_statusMessage.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _statusMessage,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF267B5D),
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
                                     OutlinedButton.icon(
-                                      onPressed: () =>
-                                          unawaited(_createNote(provider, isBugTemplate: true)),
-                                      icon: const Icon(Icons.bug_report_outlined, size: 18),
-                                      label: const Text('Записать баг'),
+                                      onPressed: () => unawaited(_deleteCurrentNote(provider)),
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                                      label: const Text('Удалить заметку'),
+                                    ),
+                                    const Spacer(),
+                                    FilledButton.icon(
+                                      onPressed: () => unawaited(_saveCurrentNote(provider)),
+                                      icon: const Icon(Icons.save_outlined, size: 18),
+                                      label: Text(
+                                        _hasDirtyChanges
+                                            ? 'Сохранить заметку*'
+                                            : 'Сохранить заметку',
+                                      ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: TextField(
-                                      controller: _titleController,
-                                      onChanged: (_) {
-                                        if (!_hasDirtyChanges || _statusMessage.isNotEmpty) {
-                                          setState(() {
-                                            _hasDirtyChanges = true;
-                                            _statusMessage = '';
-                                          });
-                                        }
-                                      },
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      decoration: const InputDecoration(
-                                        labelText: 'Заголовок заметки',
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    flex: 2,
-                                    child: DropdownButtonFormField<String?>(
-                                      value: validDropdownFolderId,
-                                      isExpanded: true,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Папка',
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                      ),
-                                      items: <DropdownMenuItem<String?>>[
-                                        const DropdownMenuItem<String?>(
-                                          value: null,
-                                          child: Text('Без папки'),
-                                        ),
-                                        ...store.folders.map(
-                                          (f) => DropdownMenuItem<String?>(
-                                            value: f.id,
-                                            child: Text(
-                                              f.name,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged: (String? newFolderId) {
-                                        setState(() {
-                                          _editingNoteFolderId = newFolderId;
-                                          _hasDirtyChanges = true;
-                                          _statusMessage = '';
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _contentController,
-                                  expands: true,
-                                  minLines: null,
-                                  maxLines: null,
-                                  readOnly: false,
-                                  textAlignVertical: TextAlignVertical.top,
-                                  onChanged: (_) {
-                                    if (!_hasDirtyChanges || _statusMessage.isNotEmpty) {
-                                      setState(() {
-                                        _hasDirtyChanges = true;
-                                        _statusMessage = '';
-                                      });
-                                    }
-                                  },
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    height: 1.55,
-                                    color: Color(0xFF283246),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText:
-                                        'Опишите баг, шаги воспроизведения, заметки по проекту или задачи...',
-                                    alignLabelWithHint: true,
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              if (_statusMessage.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  _statusMessage,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF267B5D),
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () => unawaited(_deleteCurrentNote(provider)),
-                                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                                    label: const Text('Удалить заметку'),
-                                  ),
-                                  const Spacer(),
-                                  FilledButton.icon(
-                                    onPressed: () => unawaited(_saveCurrentNote(provider)),
-                                    icon: const Icon(Icons.save_outlined, size: 18),
-                                    label: Text(
-                                      _hasDirtyChanges
-                                          ? 'Сохранить заметку*'
-                                          : 'Сохранить заметку',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,15 +1,16 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.64: удалена интерполяция branch из app_version.dart"
+current_stage: "Релиз 2.1.65: исправлен ввод текста и фокус во вкладке «Заметки»"
 
 completed:
-  - "Заменены все вхождения branch на обычный текст branch в lib/services/app_version.dart"
-  - "Обновлена версия до 2.1.64+64 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлены явные FocusNode и фокус при создании заметки/папки в lib/widgets/project_notes_tab.dart"
+  - "Убраны лишние setState при каждом символе в редакторе заметки"
+  - "Обновлена версия до 2.1.65+65 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить прохождение Analyze Dart code и сборку Windows 2.1.64 на GitHub Actions"
+  - "Проверить сборку 2.1.65 на GitHub Actions и ввод текста в заметках и папках"
 
 next_step: >
-  Залить архив 2.1.64 в репозиторий и дождаться завершения сборки Windows на GitHub Actions.
+  Залить архив 2.1.65 в репозиторий и проверить ввод текста в заголовке, тексте заметки и названии папки.

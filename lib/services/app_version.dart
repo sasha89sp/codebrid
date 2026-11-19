@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.64';
-  static const int currentBuildNumber = 64;
+  static const String currentVersion = '2.1.65';
+  static const int currentBuildNumber = 65;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.65',
+      buildNumber: 65,
+      title: 'Исправлен ввод текста и фокус полей во вкладке «Заметки»',
+      summary: 'В редактор заметок и поле создания папки добавлены явные FocusNode, корректная передача фокуса при клике и создании заметки, а также устранены лишние перерисовки при наборе текста.',
+      changes: [
+        'Добавлены явные FocusNode и обработка фокуса для полей заголовка, текста заметки и имени новой папки в ProjectNotesTab',
+        'Убраны лишние setState при каждом нажатии клавиши в редакторе заметки, чтобы не сбрасывался фокус и ввод текста',
+        'Обновлена версия до 2.1.65+65 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.64',
       buildNumber: 64,
@@ -93,16 +104,6 @@ class AppVersion {
         'В MacOsWindowTitleBar добавлено запоминание состояния максимизации/полного экрана перед сворачиванием и автоматическое восстановление при возврате окна',
         'В WindowSizeListener и AppTrayService защищено сохранение флагов windowIsMaximized/windowIsFullScreen при сворачивании окна',
         'Обновлена версия до 2.1.58+58 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.57',
-      buildNumber: 57,
-      title: 'Удалён неиспользуемый импорт dart:convert в build_bundle_service.dart',
-      summary: 'Устранено предупреждение unused_import (dart:convert) в lib/services/build_bundle_service.dart для прохождения flutter analyze.',
-      changes: [
-        'Удалён неиспользуемый импорт dart:convert в lib/services/build_bundle_service.dart',
-        'Обновлена версия до 2.1.57+57 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

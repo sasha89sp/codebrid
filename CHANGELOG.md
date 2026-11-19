@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.65+65
+- Исправлен ввод текста во вкладке **«Заметки»** (`ProjectNotesTab`): добавлены явные `FocusNode`, автоматическая фокусировка при создании заметки/папки и убраны лишние перерисовки при каждом нажатии клавиши.
+
 ## 2.1.64+64
 - Удалены все вхождения строковой интерполяции `branch` в `lib/services/app_version.dart`, вызывавшие ошибки `undefined_identifier`, `invalid_constant`, `non_constant_list_element` и `unnecessary_brace_in_string_interps` при выполнении `flutter analyze`.
 
