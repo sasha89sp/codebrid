@@ -17,11 +17,31 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.22';
-  static const int currentBuildNumber = 22;
+  static const String currentVersion = '2.1.24';
+  static const int currentBuildNumber = 24;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.24',
+      buildNumber: 24,
+      title: 'Сохранена прежняя опция удаления ZIP + добавлена опция автопереноса в папку версий',
+      summary: 'Во вкладке «Авто-деплой» оставлена прежняя опция удаления исходного ZIP и добавлена отдельная опция автопереноса в папку версий проекта.',
+      changes: [
+        'Возвращён отдельный чекбокс удаления исходного ZIP после успешного push без перезаписи при сохранении настроек',
+        'Добавлена новая опция автоматического переноса/сохранения всех версий ZIP в папку проекта (_zip_versions или выбранный каталог)',
+      ],
+    ),
+    ReleaseEntry(
+      version: '2.1.23',
+      buildNumber: 23,
+      title: 'Автоперенос ZIP-архива после push в папку версий проекта',
+      summary: 'Вместо удаления ZIP-архив переносится в папку версий проекта (_zip_versions или выбранную папку) с сохранением всех версий.',
+      changes: [
+        'Добавлены moveZipAfterPush (включено по умолчанию) и zipArchiveFolder в CodeProject, ProjectProvider и AutoDeployTab',
+        'При совпадении имени файла в папке версий добавляется метка времени, чтобы предыдущие версии архивов не перезаписывались',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.22',
       buildNumber: 22,

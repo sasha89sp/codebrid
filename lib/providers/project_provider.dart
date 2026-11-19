@@ -427,6 +427,8 @@ class ProjectProvider extends ChangeNotifier {
     required bool deleteZipAfterDeploy,
     required bool cleanBeforeExtract,
     bool autoSyncOnReject = true,
+    bool moveZipAfterPush = true,
+    String zipArchiveFolder = '',
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -439,6 +441,8 @@ class ProjectProvider extends ChangeNotifier {
       deleteZipAfterDeploy: deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract,
       autoSyncOnReject: autoSyncOnReject,
+      moveZipAfterPush: moveZipAfterPush,
+      zipArchiveFolder: zipArchiveFolder.trim(),
     );
     await storage.updateProject(updated);
     currentProject = updated;
@@ -722,9 +726,50 @@ class ProjectProvider extends ChangeNotifier {
       lastDeployStatus = gitResult.message;
       if (gitResult.success) {
         infoMessage = gitResult.message;
-        if (project.deleteZipAfterDeploy) {
+        final zipFile = File(zipPath);
+        if (project.moveZipAfterPush) {
           try {
-            final zipFile = File(zipPath);
+            if (await zipFile.exists()) {
+              final archiveDirPath = project.zipArchiveFolder.trim().isNotEmpty
+                  ? p.normalize(project.zipArchiveFolder.trim())
+                  : p.normalize(p.join(project.outputPath, '_zip_versions'));
+              final archiveDir = Directory(archiveDirPath);
+              await archiveDir.create(recursive: true);
+
+              var destPath = p.join(archiveDir.path, fileName);
+              if (await File(destPath).exists()) {
+                final dotIdx = fileName.lastIndexOf('.');
+                final stem = dotIdx > 0 ? fileName.substring(0, dotIdx) : fileName;
+                final ext = dotIdx > 0 ? fileName.substring(dotIdx) : '';
+                final now = DateTime.now();
+                String two(int n) => n.toString().padLeft(2, '0');
+                final stamp = '${now.year}${two(now.month)}${two(now.day)}_${two(now.hour)}${two(now.minute)}${two(now.second)}';
+                destPath = p.join(archiveDir.path, '${stem}_$stamp$ext');
+                var counter = 2;
+                while (await File(destPath).exists()) {
+                  destPath = p.join(archiveDir.path, '${stem}_${stamp}_$counter$ext');
+                  counter++;
+                }
+              }
+
+              if (project.deleteZipAfterDeploy) {
+                try {
+                  await zipFile.rename(destPath);
+                } on FileSystemException {
+                  await zipFile.copy(destPath);
+                  await zipFile.delete();
+                }
+                _appendDeployLog('ZIP перенесён в историю версий и удалён из исходной папки: $destPath');
+              } else {
+                await zipFile.copy(destPath);
+                _appendDeployLog('ZIP сохранён в историю версий: $destPath');
+              }
+            }
+          } catch (error) {
+            _appendDeployLog('Не удалось сохранить ZIP в папку версий: $error');
+          }
+        } else if (project.deleteZipAfterDeploy) {
+          try {
             if (await zipFile.exists()) {
               await zipFile.delete();
               _appendDeployLog('Исходный ZIP удалён: $fileName');

@@ -22,6 +22,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   String? _loadedProjectId;
   bool _autoDeployEnabled = false;
   bool _deleteZipAfterDeploy = false;
+  bool _moveZipAfterPush = true;
+  final TextEditingController _zipArchiveFolderController = TextEditingController();
   bool _cleanBeforeExtract = false;
   bool _autoSyncOnReject = true;
 
@@ -31,6 +33,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
     _repoUrlController.dispose();
     _branchController.dispose();
     _filterController.dispose();
+    _zipArchiveFolderController.dispose();
     super.dispose();
   }
 
@@ -45,6 +48,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       _filterController.text = project.zipNameFilter;
       _autoDeployEnabled = project.autoDeployEnabled;
       _deleteZipAfterDeploy = project.deleteZipAfterDeploy;
+      _moveZipAfterPush = project.moveZipAfterPush;
+      _zipArchiveFolderController.text = project.zipArchiveFolder;
       _cleanBeforeExtract = project.cleanBeforeExtract;
       _autoSyncOnReject = project.autoSyncOnReject;
     }
@@ -78,6 +83,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       autoDeployEnabled: _autoDeployEnabled,
       zipNameFilter: _filterController.text,
       deleteZipAfterDeploy: _deleteZipAfterDeploy,
+      moveZipAfterPush: _moveZipAfterPush,
+      zipArchiveFolder: _zipArchiveFolderController.text,
       cleanBeforeExtract: _cleanBeforeExtract,
       autoSyncOnReject: _autoSyncOnReject,
     );
@@ -229,6 +236,24 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                   onChanged: (bool? value) =>
                       setState(() => _deleteZipAfterDeploy = value ?? false),
                 ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Автоматически переносить ZIP-архив после успешного push в папку версий (сохраняя все версии)'),
+                  value: _moveZipAfterPush,
+                  onChanged: (bool? value) =>
+                      setState(() => _moveZipAfterPush = value ?? true),
+                ),
+                if (_moveZipAfterPush) ...[
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _zipArchiveFolderController,
+                    decoration: const InputDecoration(
+                      labelText: 'Папка хранения всех версий ZIP (необязательно)',
+                      hintText: r'По умолчанию <папка_проекта>\_zip_versions',
+                    ),
+                  ),
+                ],
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,

@@ -16,6 +16,8 @@ class CodeProject {
     this.deleteZipAfterDeploy = false,
     this.cleanBeforeExtract = false,
     this.autoSyncOnReject = true,
+    this.moveZipAfterPush = true,
+    this.zipArchiveFolder = '',
     this.buildCaptureEnabled = false,
     this.buildAskTargetBeforeExtract = false,
     this.buildTargetDirectory = '',
@@ -49,6 +51,8 @@ class CodeProject {
   final bool deleteZipAfterDeploy;
   final bool cleanBeforeExtract;
   final bool autoSyncOnReject;
+  final bool moveZipAfterPush;
+  final String zipArchiveFolder;
   final bool buildCaptureEnabled;
   final bool buildAskTargetBeforeExtract;
   final String buildTargetDirectory;
@@ -72,6 +76,8 @@ class CodeProject {
     bool? deleteZipAfterDeploy,
     bool? cleanBeforeExtract,
     bool? autoSyncOnReject,
+    bool? moveZipAfterPush,
+    String? zipArchiveFolder,
     bool? buildCaptureEnabled,
     bool? buildAskTargetBeforeExtract,
     String? buildTargetDirectory,
@@ -98,6 +104,8 @@ class CodeProject {
       deleteZipAfterDeploy: deleteZipAfterDeploy ?? this.deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract ?? this.cleanBeforeExtract,
       autoSyncOnReject: autoSyncOnReject ?? this.autoSyncOnReject,
+      moveZipAfterPush: moveZipAfterPush ?? this.moveZipAfterPush,
+      zipArchiveFolder: zipArchiveFolder ?? this.zipArchiveFolder,
       buildCaptureEnabled: buildCaptureEnabled ?? this.buildCaptureEnabled,
       buildAskTargetBeforeExtract: buildAskTargetBeforeExtract ?? this.buildAskTargetBeforeExtract,
       buildTargetDirectory: buildTargetDirectory ?? this.buildTargetDirectory,
@@ -126,6 +134,8 @@ class CodeProject {
         'deleteZipAfterDeploy': deleteZipAfterDeploy,
         'cleanBeforeExtract': cleanBeforeExtract,
         'autoSyncOnReject': autoSyncOnReject,
+        'moveZipAfterPush': moveZipAfterPush,
+        'zipArchiveFolder': zipArchiveFolder,
         'buildCaptureEnabled': buildCaptureEnabled,
         'buildAskTargetBeforeExtract': buildAskTargetBeforeExtract,
         'buildTargetDirectory': buildTargetDirectory,
@@ -161,7 +171,9 @@ class CodeProject {
       deleteZipAfterDeploy: json['deleteZipAfterDeploy'] == true,
       cleanBeforeExtract: json['cleanBeforeExtract'] == true,
       autoSyncOnReject: json['autoSyncOnReject'] != false,
-      buildCaptureEnabled: json['buildCaptureEnabled'] == true,
+      moveZipAfterPush: json['moveZipAfterPush'] != false,
+      zipArchiveFolder: (json['zipArchiveFolder'] as String? ?? '').trim(),
+    );      buildCaptureEnabled: json['buildCaptureEnabled'] == true,
       buildAskTargetBeforeExtract: json['buildAskTargetBeforeExtract'] == true,
       buildTargetDirectory: json['buildTargetDirectory']?.toString() ?? '',
       buildZipFilter: json['buildZipFilter']?.toString() ?? '',
