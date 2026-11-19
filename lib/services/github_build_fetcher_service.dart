@@ -40,7 +40,7 @@ class GitHubBuildFailureInfo {
 
   String get shortSummary {
     final wf = workflowName.isNotEmpty ? ' ($workflowName)' : '';
-    final br = branch.isNotEmpty ? ' [${branch}]' : '';
+    final br = branch.isNotEmpty ? ' [$branch]' : '';
     return 'Сборка на GitHub упала: run #$runId$wf$br — статус $conclusion';
   }
 }
