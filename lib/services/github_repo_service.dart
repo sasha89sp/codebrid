@@ -352,7 +352,6 @@ class GitHubRepoService {
           success: false,
           logs: logs,
           errorMessage: 'Не удалось выполнить git init.',
-          errorCode: null,
         );
       }
       await GitService.run(<String>['branch', '-M', cleanBranch], workingDirectory: cleanDir);

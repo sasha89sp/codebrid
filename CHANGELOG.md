@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.27+27
+- Исправлена ошибка анализатора `undefined_named_parameter` (`errorCode`) в `lib/services/github_repo_service.dart`.
+
 ## 2.1.26+26
 - Исправлена синтаксическая ошибка в `CodeProject.fromJson` (`lib/models/code_project.dart`): убран лишний `);` после `zipArchiveFolder`, из-за которого поля `buildCapture*` падали с `missing_identifier` и `unused_label`.
 

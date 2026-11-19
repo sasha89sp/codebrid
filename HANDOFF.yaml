@@ -1,12 +1,12 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.26: исправлена синтаксическая ошибка в CodeProject.fromJson"
+current_stage: "Релиз 2.1.27: удалён несуществующий параметр errorCode в github_repo_service.dart"
 
 completed:
-  - "Удалён преждевременный ); после zipArchiveFolder в CodeProject.fromJson (lib/models/code_project.dart)"
-  - "Обновлена версия до 2.1.26+26 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Удалён лишний именованный параметр errorCode: null в lib/services/github_repo_service.dart"
+  - "Обновлена версия до 2.1.27+27 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Запустить Build portable Windows x64 на GitHub и убедиться в прохождении Analyze Dart code"
+  - "Запустить Build portable Windows x64 на GitHub и убедиться в успешном прохождении Analyze Dart code"
 
 next_step: >
-  Залить архив 2.1.26 в репозиторий и проверить сборку Windows.
+  Залить архив 2.1.27 в репозиторий и проверить сборку Windows.

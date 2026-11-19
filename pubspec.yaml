@@ -1,7 +1,7 @@
 name: code_bridge_mini
 description: Portable desktop tool for turning AI responses and ZIP archives into Flutter project files and pushing them to GitHub.
 publish_to: 'none'
-version: 2.1.26+26
+version: 2.1.27+27
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

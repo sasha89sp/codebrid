@@ -17,11 +17,20 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.26';
-  static const int currentBuildNumber = 26;
+  static const String currentVersion = '2.1.27';
+  static const int currentBuildNumber = 27;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.27',
+      buildNumber: 27,
+      title: 'Удалён несуществующий параметр errorCode в GitHubRepoProvisionResult',
+      summary: 'Убран лишний именованный аргумент errorCode: null при ошибке git init в lib/services/github_repo_service.dart.',
+      changes: [
+        'Удалён errorCode: null из вызова конструктора GitHubRepoProvisionResult в attachExistingRepository',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.26',
       buildNumber: 26,
