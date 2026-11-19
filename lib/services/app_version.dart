@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.37';
-  static const int currentBuildNumber = 37;
+  static const String currentVersion = '2.1.38';
+  static const int currentBuildNumber = 38;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.38',
+      buildNumber: 38,
+      title: 'Вынесены диалоги проектов/настроек и координатор бэкапов',
+      summary: 'Продолжена разгрузка home_screen.dart и project_provider.dart за счёт выделения диалогов проектов, диалога настроек/бэкапов и BackupCoordinator.',
+      changes: [
+        'Вынесены диалоги создания и переименования проекта в lib/widgets/project_dialogs.dart',
+        'Вынесен диалог настроек, бэкапов и истории версий в lib/widgets/about_backup_dialog.dart',
+        'Выделен BackupCoordinator в lib/services/backup_coordinator_service.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.37',
       buildNumber: 37,
@@ -94,16 +105,6 @@ class AppVersion {
       changes: [
         'Восстановлены checkCurrentProjectGit, clearDeployLogs, dismissPendingBuild, confirmPendingBuild, createBackupNow, updateBackupSettings и restoreBackup в ProjectProvider',
         'Исправлены кавычки, неиспользуемые поля и переключение максимизации/полного экрана через window_manager в compact_app_menu.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.30',
-      buildNumber: 30,
-      title: 'Тёмное каскадное меню в стиле референса с настройками программы',
-      summary: 'Добавлено тёмное компактное меню с подменю (Файл, Деплой и сборки, Бэкап и настройки, Окно), быстрыми действиями и настройками/выходом.',
-      changes: [
-        'Создан виджет CompactAppMenuButton (lib/widgets/compact_app_menu.dart) в тёмном стиле с подменю и горячими клавишами',
-        'Подключены все настройки мониторинга «Загрузок», автосборок GitHub, бэкапа/автобэкапа, вкладок и папок проекта',
       ],
     ),
   ];

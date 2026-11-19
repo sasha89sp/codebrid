@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.38+38
+- Вынесены диалоги проектов в `lib/widgets/project_dialogs.dart`, диалог настроек и бэкапов в `lib/widgets/about_backup_dialog.dart`, а управление бэкапами выделено в `BackupCoordinator` (`lib/services/backup_coordinator_service.dart`).
+
 ## 2.1.37+37
 - Вынесен диалог «Файлы → текст для ИИ» в `lib/widgets/files_to_prompt_dialog.dart`, логика фонового опроса сборок GitHub выделена в `GitHubBuildPollingCoordinator` (`lib/services/github_build_polling_service.dart`), а список релизов в `AppVersion` сокращён до последних ключевых версий.
 

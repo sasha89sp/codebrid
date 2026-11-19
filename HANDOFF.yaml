@@ -1,17 +1,17 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.37: разгрузка home_screen/project_provider и компактная история в AppVersion"
+current_stage: "Релиз 2.1.38: вынесены диалоги проектов, диалог бэкапов/настроек и BackupCoordinator"
 
 completed:
-  - "Вынесен диалог «Файлы → текст для ИИ» в lib/widgets/files_to_prompt_dialog.dart"
-  - "Выделен GitHubBuildPollingCoordinator в lib/services/github_build_polling_service.dart"
-  - "Сокращён список ReleaseEntry в AppVersion до последних ключевых версий"
-  - "Обновлена версия до 2.1.37+37 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Вынесены диалоги создания и переименования проекта в lib/widgets/project_dialogs.dart"
+  - "Вынесен диалог настроек, бэкапов и истории версий в lib/widgets/about_backup_dialog.dart"
+  - "Выделен BackupCoordinator в lib/services/backup_coordinator_service.dart"
+  - "Обновлена версия до 2.1.38+38 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions и работу функций в приложении"
+  - "Проверить Build portable Windows x64 на GitHub Actions и работу диалогов/бэкапов в приложении"
 
 next_step: >
-  Залить архив 2.1.37 в репозиторий и проверить сборку Windows на GitHub.
+  Залить архив 2.1.38 в репозиторий и проверить сборку Windows на GitHub.

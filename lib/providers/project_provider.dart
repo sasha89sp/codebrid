@@ -9,6 +9,7 @@ import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../services/agent_template.dart';
 import '../services/app_storage.dart';
+import '../services/backup_coordinator_service.dart';
 import '../services/backup_service.dart';
 import '../services/downloads_watcher_service.dart';
 import '../services/file_writer.dart';
@@ -54,12 +55,27 @@ class ProjectProvider extends ChangeNotifier {
   String? lastBuildArchiveName;
   String githubToken = '';
   String githubOwner = '';
-  bool autoBackupEnabled = true;
-  int autoBackupIntervalMinutes = 30;
-  String? backupDirectory;
-  String? lastBackupZipPath;
-  String? lastAutoBackupAt;
-  Timer? _autoBackupTimer;
+  late final BackupCoordinator _backupCoordinator = BackupCoordinator(
+    storage: storage,
+    getProjects: () => projects,
+    onLog: _appendDeployLog,
+    onInfo: (msg) => infoMessage = msg,
+    onError: (msg) => errorMessage = msg,
+    onReloadAfterRestore: (_, __, ___, ____) async {
+      projects = await storage.loadProjects();
+      if (projects.isNotEmpty) {
+        currentProject = (currentProject?.id != null ? _findProject(currentProject!.id) : null) ?? projects.first;
+        await _loadCurrentProjectDetails();
+      }
+    },
+    onNotify: notifyListeners,
+  );
+
+  bool get autoBackupEnabled => _backupCoordinator.autoBackupEnabled;
+  int get autoBackupIntervalMinutes => _backupCoordinator.autoBackupIntervalMinutes;
+  String? get backupDirectory => _backupCoordinator.backupDirectory;
+  String? get lastBackupZipPath => _backupCoordinator.lastBackupZipPath;
+  String? get lastAutoBackupAt => _backupCoordinator.lastAutoBackupAt;
   late final GitHubBuildPollingCoordinator _buildPollingCoordinator = GitHubBuildPollingCoordinator(
     storage: storage,
     getProjects: () => projects,
@@ -103,16 +119,17 @@ class ProjectProvider extends ChangeNotifier {
       downloadsWatcherEnabled = settings.downloadsWatcherEnabled;
       githubToken = settings.githubToken;
       githubOwner = settings.githubOwner;
-      autoBackupEnabled = settings.autoBackupEnabled;
-      autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
-      backupDirectory = settings.backupDirectory;
-      lastAutoBackupAt = settings.lastAutoBackupAt;
       _lastFetchedBuildSourceByProject
         ..clear()
         ..addAll(settings.lastFetchedBuildSources);
-      _configureAutoBackupTimer();
+      _backupCoordinator.applyInitialState(
+        enabled: settings.autoBackupEnabled,
+        intervalMinutes: settings.autoBackupIntervalMinutes,
+        customDir: settings.backupDirectory,
+        lastAutoAt: settings.lastAutoBackupAt,
+      );
       if (autoBackupEnabled) {
-        unawaited(_runAutoBackupIfDue());
+        unawaited(_backupCoordinator.runIfDue());
       }
       if (settings.tabOrder.isNotEmpty) {
         const allowed = <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
@@ -155,7 +172,6 @@ class ProjectProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _autoBackupTimer?.cancel();
     _buildPollingCoordinator.dispose();
     unawaited(_downloadsWatcher.stop());
     super.dispose();
@@ -614,16 +630,34 @@ rentProject = (currentProject?.id != null ? _findProject(currentProject!.id) : n
       autoBackupIntervalMinutes = settings.autoBackupIntervalMinutes;
       backupDirectory = settings.backupDirectory;
       lastAutoBackupAt = settings.lastAutoBackupAt;
-      _configureAutoBackupTimer();
-      infoMessage = res.message;
-      _appendDeployLog(res.message);
-      return res;
+  Future<void> updateBackupSettings({
+    required bool enabled,
+    required int intervalMinutes,
+    String? customBackupDir,
+  }) =>
+      _backupCoordinator.updateSettings(
+        enabled: enabled,
+        intervalMinutes: intervalMinutes,
+        customBackupDir: customBackupDir,
+      );
+
+  Future<BackupResult> createBackupNow({
+    bool isAuto = false,
+    bool silent = false,
+  }) =>
+      _backupCoordinator.createBackupNow(isAuto: isAuto, silent: silent);
+
+  Future<BackupResult> restoreBackup(String zipPath) async {
+    isWorking = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      return await _backupCoordinator.restoreBackup(zipPath);
     } finally {
       isWorking = false;
       notifyListeners();
     }
   }
-
 
   void _appendDeployLog(String message) {
     final now = DateTime.now();

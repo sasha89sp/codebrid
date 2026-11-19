@@ -9,6 +9,8 @@
 - `lib/widgets/build_capture_tab.dart` — вкладка «Распаковка сборок»: перехват и распаковка `.zip` сборок в `_history` и `current`, сохранение файлов, автопроверка/автоскачивание с GitHub.
 - `lib/widgets/section_header.dart` — заголовок секции.
 - `lib/widgets/files_to_prompt_dialog.dart` — диалог сборки файлов/папки в промпт для ИИ.
+- `lib/widgets/project_dialogs.dart` — диалоги создания и переименования проекта.
+- `lib/widgets/about_backup_dialog.dart` — окно настроек, бэкапов и истории версий.
 - `lib/widgets/home_shortcuts.dart` — глобальные горячие клавиши главного окна.
 
 ## Состояние (`lib/providers/`)
@@ -28,6 +30,7 @@
 - `git_service.dart` — `GitService`: локальные операции Git (`init`, `remote`, `commit`, `push`, автосинхронизация при отказе).
 - `github_repo_service.dart` — `GitHubRepoService`: создание и подключение репозиториев на GitHub.
 - `backup_service.dart` — `BackupService`: создание и восстановление полных бэкапов данных проекта.
+- `backup_coordinator_service.dart` — `BackupCoordinator`: таймер автобэкапа, сохранение настроек, создание и восстановление бэкапов.
 - `downloads_watcher_service.dart` — `DownloadsWatcherService`: фоновый мониторинг папки «Загрузок».
 - `single_instance_bridge.dart` — `SingleInstanceBridge`: локальный IPC для передачи `.zip` запущенному экземпляру.
 - `agent_template.dart` — `AgentTemplate`: шаблоны инструкций и рендер переменных.
