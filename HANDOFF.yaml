@@ -1,12 +1,13 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.27: удалён несуществующий параметр errorCode в github_repo_service.dart"
+current_stage: "Релиз 2.1.28: автопроверка и автоскачивание готовых сборок с GitHub"
 
 completed:
-  - "Удалён лишний именованный параметр errorCode: null в lib/services/github_repo_service.dart"
-  - "Обновлена версия до 2.1.27+27 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Создан GitHubBuildFetcherService для проверки готовых сборок в GitHub Actions artifacts и GitHub Releases"
+  - "Добавлены периодическая автопроверка, кнопка «Проверить и скачать с GitHub» и автоматическая распаковка скачанных ZIP-сборок"
+  - "Обновлена версия до 2.1.28+28 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 pending:
-  - "Запустить Build portable Windows x64 на GitHub и убедиться в успешном прохождении Analyze Dart code"
+  - "Проверить автопроверку и скачивание готовой сборки после компиляции на GitHub"
 
 next_step: >
-  Залить архив 2.1.27 в репозиторий и проверить сборку Windows.
+  Залить архив 2.1.28 в репозиторий и проверить работу автополучения сборок во вкладке «Распаковка сборок».

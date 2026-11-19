@@ -17,11 +17,21 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.27';
-  static const int currentBuildNumber = 27;
+  static const String currentVersion = '2.1.28';
+  static const int currentBuildNumber = 28;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.28',
+      buildNumber: 28,
+      title: 'Автопроверка и автоскачивание готовых сборок с GitHub',
+      summary: 'Добавлен GitHubBuildFetcherService для автоматического получения готовых архивов сборок из GitHub Actions или релизов и их применения.',
+      changes: [
+        'Создан GitHubBuildFetcherService для проверки успешных workflow runs / артефактов и релизов репозитория по GitHub API',
+        'Добавлены автопроверка по интервалу, кнопка «Проверить и скачать с GitHub» и настройки в BuildCaptureTab и ProjectProvider',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.27',
       buildNumber: 27,

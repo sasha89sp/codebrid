@@ -24,6 +24,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
   bool _buildTakeAllPublicBuilds = true;
   bool _buildOverlayPrevious = true;
   bool _buildClearBeforeApply = false;
+  bool _buildAutoFetchEnabled = false;
+  int _buildAutoFetchIntervalMinutes = 5;
   String? _shownPendingZipPath;
 
   @override
@@ -42,6 +44,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
     _buildTakeAllPublicBuilds = project.buildTakeAllPublicBuilds;
     _buildOverlayPrevious = project.buildOverlayPrevious;
     _buildClearBeforeApply = project.buildClearBeforeApply;
+    _buildAutoFetchEnabled = project.buildAutoFetchEnabled;
+    _buildAutoFetchIntervalMinutes = project.buildAutoFetchIntervalMinutes;
     _targetDirController.text = project.buildTargetDirectory;
     _filterController.text = project.buildZipFilter;
     _preservedController.text = project.buildPreservedFiles;
@@ -57,6 +61,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
       buildTakeAllPublicBuilds: _buildTakeAllPublicBuilds,
       buildOverlayPrevious: _buildOverlayPrevious,
       buildClearBeforeApply: _buildClearBeforeApply,
+      buildAutoFetchEnabled: _buildAutoFetchEnabled,
+      buildAutoFetchIntervalMinutes: _buildAutoFetchIntervalMinutes,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -313,13 +319,57 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilledButton.icon(
-                    onPressed: () => _saveSettings(provider),
-                    icon: const Icon(Icons.save_outlined, size: 18),
-                    label: const Text('Сохранить настройки сборки'),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Автопроверка и автоскачивание сборок с GitHub после компиляции'),
+                  subtitle: const Text(
+                    'Периодически проверяет готовые артефакты GitHub Actions или релизы репозитория и автоматически применяет свежий ZIP.',
                   ),
+                  value: _buildAutoFetchEnabled,
+                  onChanged: (bool v) => setState(() => _buildAutoFetchEnabled = v),
+                ),
+                if (_buildAutoFetchEnabled) ...[
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: 240,
+                    child: DropdownButtonFormField<int>(
+                      value: _buildAutoFetchIntervalMinutes,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Интервал проверки GitHub'),
+                      items: const <DropdownMenuItem<int>>[
+                        DropdownMenuItem<int>(value: 1, child: Text('Каждую 1 минуту')),
+                        DropdownMenuItem<int>(value: 3, child: Text('Каждые 3 минуты')),
+                        DropdownMenuItem<int>(value: 5, child: Text('Каждые 5 минут')),
+                        DropdownMenuItem<int>(value: 15, child: Text('Каждые 15 минут')),
+                      ],
+                      onChanged: (int? v) {
+                        if (v != null) setState(() => _buildAutoFetchIntervalMinutes = v);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => _saveSettings(provider),
+                      icon: const Icon(Icons.save_outlined, size: 18),
+                      label: const Text('Сохранить настройки сборки'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: provider.isCheckingGitHubBuilds
+                          ? null
+                          : () => provider.checkAndApplyGitHubBuilds(silent: false),
+                      icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                      label: Text(
+                        provider.isCheckingGitHubBuilds
+                            ? 'Проверка GitHub...'
+                            : 'Проверить и скачать с GitHub',
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

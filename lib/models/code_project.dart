@@ -26,6 +26,8 @@ class CodeProject {
     this.buildTakeAllPublicBuilds = true,
     this.buildOverlayPrevious = true,
     this.buildClearBeforeApply = false,
+    this.buildAutoFetchEnabled = false,
+    this.buildAutoFetchIntervalMinutes = 5,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -61,6 +63,8 @@ class CodeProject {
   final bool buildTakeAllPublicBuilds;
   final bool buildOverlayPrevious;
   final bool buildClearBeforeApply;
+  final bool buildAutoFetchEnabled;
+  final int buildAutoFetchIntervalMinutes;
 
   CodeProject copyWith({
     String? name,
@@ -86,6 +90,8 @@ class CodeProject {
     bool? buildTakeAllPublicBuilds,
     bool? buildOverlayPrevious,
     bool? buildClearBeforeApply,
+    bool? buildAutoFetchEnabled,
+    int? buildAutoFetchIntervalMinutes,
   }) {
     return CodeProject(
       id: id,
@@ -114,6 +120,8 @@ class CodeProject {
       buildTakeAllPublicBuilds: buildTakeAllPublicBuilds ?? this.buildTakeAllPublicBuilds,
       buildOverlayPrevious: buildOverlayPrevious ?? this.buildOverlayPrevious,
       buildClearBeforeApply: buildClearBeforeApply ?? this.buildClearBeforeApply,
+      buildAutoFetchEnabled: buildAutoFetchEnabled ?? this.buildAutoFetchEnabled,
+      buildAutoFetchIntervalMinutes: buildAutoFetchIntervalMinutes ?? this.buildAutoFetchIntervalMinutes,
     );
   }
 
@@ -144,6 +152,8 @@ class CodeProject {
         'buildTakeAllPublicBuilds': buildTakeAllPublicBuilds,
         'buildOverlayPrevious': buildOverlayPrevious,
         'buildClearBeforeApply': buildClearBeforeApply,
+        'buildAutoFetchEnabled': buildAutoFetchEnabled,
+        'buildAutoFetchIntervalMinutes': buildAutoFetchIntervalMinutes,
       };
 
   factory CodeProject.fromJson(
@@ -181,6 +191,8 @@ class CodeProject {
       buildTakeAllPublicBuilds: json['buildTakeAllPublicBuilds'] != false,
       buildOverlayPrevious: json['buildOverlayPrevious'] != false,
       buildClearBeforeApply: json['buildClearBeforeApply'] == true,
+      buildAutoFetchEnabled: json['buildAutoFetchEnabled'] == true,
+      buildAutoFetchIntervalMinutes: (json['buildAutoFetchIntervalMinutes'] as num?)?.toInt() ?? 5,
     );
   }
 

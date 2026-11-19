@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.28+28
+- Добавлен `GitHubBuildFetcherService` и автопроверка/автоскачивание готовых сборок с GitHub (артефакты успешных workflow runs и релизы) с автоматическим применением через `applyBuildArchive`.
+
 ## 2.1.27+27
 - Исправлена ошибка анализатора `undefined_named_parameter` (`errorCode`) в `lib/services/github_repo_service.dart`.
 
