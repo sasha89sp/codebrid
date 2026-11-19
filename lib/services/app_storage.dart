@@ -344,6 +344,20 @@ class AppStorage {
     );
   }
 
+  Future<CodeProject> renameProject(CodeProject project, String newName) async {
+    final cleanName = newName.trim();
+    if (cleanName.isEmpty) {
+      throw const FormatException('Введите название проекта.');
+    }
+    final nextPackageName = ProjectNaming.packageName(cleanName);
+    final updated = project.copyWith(
+      name: cleanName,
+      packageName: nextPackageName,
+    );
+    await updateProject(updated);
+    return updated;
+  }
+
   Future<void> _ensureBuiltInTemplates() async {
     final builtIns = AgentTemplate.builtInTemplates();
     if (!await File(templatesIndexFile).exists()) {

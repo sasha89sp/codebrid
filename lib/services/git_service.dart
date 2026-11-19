@@ -135,6 +135,7 @@ class GitService {
     String branch = 'main',
     String? commitMessage,
     bool push = true,
+    bool autoSyncOnReject = true,
   }) async {
     final logs = <String>[];
     final targetBranch = branch.trim().isEmpty ? 'main' : branch.trim();
@@ -284,10 +285,49 @@ class GitService {
     }
 
     logs.add('Выполняется git push -u origin $targetBranch...');
-    final pushRes = await run(
+    var pushRes = await run(
       <String>['push', '-u', 'origin', targetBranch],
       workingDirectory: directory,
     );
+    if (!pushRes.isSuccess && autoSyncOnReject) {
+      final combinedLower = pushRes.combinedOutput.toLowerCase();
+      final isRejected = combinedLower.contains('rejected') ||
+          combinedLower.contains('fetch first') ||
+          combinedLower.contains('non-fast-forward');
+      if (isRejected) {
+        logs.add('Удалённая ветка опережает локальную — выполняется синхронизация с origin/$targetBranch...');
+        var syncRes = await run(
+          <String>['pull', '--rebase', '--allow-unrelated-histories', 'origin', targetBranch],
+          workingDirectory: directory,
+        );
+        if (!syncRes.isSuccess) {
+          logs.add('Rebase не прошёл, пробуем merge с --allow-unrelated-histories...');
+          await run(<String>['rebase', '--abort'], workingDirectory: directory);
+          syncRes = await run(
+            <String>['pull', '--no-rebase', '--allow-unrelated-histories', 'origin', targetBranch],
+            workingDirectory: directory,
+          );
+        }
+        if (!syncRes.isSuccess) {
+          logs.add(syncRes.combinedOutput);
+          return GitDeployResult(
+            success: false,
+            pushed: false,
+            commitHash: commitHash,
+            message: 'Коммит создан ($commitHash), но синхронизация с origin/$targetBranch завершилась с ошибкой.',
+            logs: logs,
+          );
+        }
+        if (syncRes.combinedOutput.isNotEmpty) {
+          logs.add(syncRes.combinedOutput);
+        }
+        logs.add('Повторный git push -u origin $targetBranch после синхронизации...');
+        pushRes = await run(
+          <String>['push', '-u', 'origin', targetBranch],
+          workingDirectory: directory,
+        );
+      }
+    }
     if (!pushRes.isSuccess) {
       logs.add(pushRes.combinedOutput);
       return GitDeployResult(

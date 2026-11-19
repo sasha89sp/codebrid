@@ -6,7 +6,7 @@ class AppSettings {
     this.selectedTemplateId,
     this.downloadsWatchPath,
     this.downloadsWatcherEnabled = false,
-    this.tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'],
+    this.tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
   });
 
   final String? lastProjectId;
@@ -58,7 +58,7 @@ class AppSettings {
       downloadsWatcherEnabled: json['downloadsWatcherEnabled'] == true,
       tabOrder: (json['tabOrder'] is List)
           ? (json['tabOrder'] as List).map((e) => e.toString()).toList()
-          : const <String>['agent', 'import', 'files', 'auto_deploy'],
+          : const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'],
     );
   }
 }

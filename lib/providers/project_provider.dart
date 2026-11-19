@@ -40,7 +40,7 @@ class ProjectProvider extends ChangeNotifier {
 
   String downloadsWatchPath = DownloadsWatcherService.defaultDownloadsPath();
   bool downloadsWatcherEnabled = false;
-  List<String> tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'];
+  List<String> tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
   final List<String> deployLogs = <String>[];
   String? lastDeployStatus;
   GitStatusSummary? lastGitStatus;
@@ -174,6 +174,21 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> saveAgentContent(String content) async {
+    final project = currentProject;
+    if (project == null) return;
+    isWorking = true;
+    notifyListeners();
+    try {
+      await storage.writeAgent(project, content);
+      agentContent = await storage.readAgent(project);
+      infoMessage = 'Изменения в agent.md сохранены.';
+    } finally {
+      isWorking = false;
+      notifyListeners();
+    }
+  }
+
   String _renderTemplate(String content, CodeProject project) {
     return content
         .replaceAll('{{project_name}}', project.name)
@@ -266,6 +281,7 @@ class ProjectProvider extends ChangeNotifier {
     required String zipNameFilter,
     required bool deleteZipAfterDeploy,
     required bool cleanBeforeExtract,
+    bool autoSyncOnReject = true,
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -277,6 +293,7 @@ class ProjectProvider extends ChangeNotifier {
       zipNameFilter: zipNameFilter.trim(),
       deleteZipAfterDeploy: deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract,
+      autoSyncOnReject: autoSyncOnReject,
     );
     await storage.updateProject(updated);
     currentProject = updated;
@@ -549,6 +566,7 @@ class ProjectProvider extends ChangeNotifier {
         branch: project.gitBranch,
         commitMessage: 'Auto-deploy $fileName via CodeBridge Mini',
         push: true,
+        autoSyncOnReject: project.autoSyncOnReject,
       );
 
       for (final line in gitResult.logs) {
@@ -596,7 +614,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> resetTabOrder() async {
-    tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy'];
+    tabOrder = const <String>['agent', 'import', 'files', 'auto_deploy', 'build_capture'];
     await storage.saveTabOrder(tabOrder);
     notifyListeners();
   }
@@ -702,6 +720,29 @@ class ProjectProvider extends ChangeNotifier {
       outputFiles = await storage.listOutputFiles(project);
       infoMessage = 'Создано файлов: $written.';
       return written;
+    } finally {
+      isWorking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> renameCurrentProject(String newName) async {
+    final project = currentProject;
+    if (project == null) return;
+    final cleanName = newName.trim();
+    if (cleanName.isEmpty) {
+      throw const FormatException('Введите название проекта.');
+    }
+    isWorking = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final updated = await storage.renameProject(project, cleanName);
+      currentProject = updated;
+      projects = projects
+          .map((item) => item.id == updated.id ? updated : item)
+          .toList();
+      infoMessage = 'Название проекта обновлено: «${updated.name}».';
     } finally {
       isWorking = false;
       notifyListeners();

@@ -13,6 +13,7 @@ import '../models/generated_file.dart';
 import '../providers/project_provider.dart';
 import '../services/files_to_prompt.dart';
 import '../widgets/auto_deploy_tab.dart';
+import '../widgets/build_capture_tab.dart';
 import '../widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -303,7 +304,23 @@ class _ProjectWorkspaceState extends State<_ProjectWorkspace> with TickerProvide
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(project.name, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40))),
+                        Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  project.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Color(0xFF202A40)),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              IconButton(
+                                tooltip: 'Переименовать проект',
+                                onPressed: () => _showRenameProjectDialog(context, context.read<ProjectProvider>(), project),
+                                icon: const Icon(Icons.edit_outlined, size: 19),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 5),
                         Text(project.description.isEmpty ? 'Описание задачи не задано' : project.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: Color(0xFF7C879A))),
                       ],
@@ -471,16 +488,70 @@ class _WorkspaceTabItem extends StatelessWidget {
   }
 }
 
-class _AgentTab extends StatelessWidget {
+class _AgentTab extends StatefulWidget {
   const _AgentTab();
+
+  @override
+  State<_AgentTab> createState() => _AgentTabState();
+}
+
+class _AgentTabState extends State<_AgentTab> {
+  final TextEditingController _agentController = TextEditingController();
+  String? _loadedProjectId;
+  String _lastSyncedContent = '';
+  bool _hasDirtyChanges = false;
+
+  @override
+  void dispose() {
+    _agentController.dispose();
+    super.dispose();
+  }
+
+  void _syncAgentEditor(ProjectProvider provider) {
+    final projectId = provider.currentProject?.id;
+    final incoming = provider.agentContent;
+    final projectChanged = projectId != _loadedProjectId;
+    final externalChanged = incoming != _lastSyncedContent;
+
+    if (projectChanged || (externalChanged && !_hasDirtyChanges)) {
+      _loadedProjectId = projectId;
+      _lastSyncedContent = incoming;
+      _hasDirtyChanges = false;
+      _agentController.value = TextEditingValue(
+        text: incoming,
+        selection: TextSelection.collapsed(
+          offset: incoming.length.clamp(0, incoming.length),
+        ),
+      );
+    } else if (externalChanged && _hasDirtyChanges) {
+      _lastSyncedContent = incoming;
+    }
+  }
+
+  Future<void> _saveManualAgent(BuildContext context, ProjectProvider provider) async {
+    try {
+      await provider.saveAgentContent(_agentController.text);
+      _lastSyncedContent = provider.agentContent;
+      if (mounted) {
+        setState(() => _hasDirtyChanges = false);
+        _showSnack(context, 'Изменения в agent.md сохранены.');
+      }
+    } catch (error) {
+      if (context.mounted) {
+        _showSnack(context, 'Не удалось сохранить agent.md: $error');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProjectProvider>();
+    _syncAgentEditor(provider);
     final availableTemplates = provider.templates;
     final selectedId = availableTemplates.any((item) => item.id == provider.selectedTemplateId)
         ? provider.selectedTemplateId
         : (availableTemplates.isEmpty ? null : availableTemplates.first.id);
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -488,7 +559,7 @@ class _AgentTab extends StatelessWidget {
         children: [
           const SectionHeader(
             title: 'Инструкция AGENT.md',
-            subtitle: 'Выберите шаблон, управляйте своими инструкциями и отправьте AGENT.md в любую нейросеть.',
+            subtitle: 'Редактируйте инструкцию вручную, выбирайте шаблон и отправляйте AGENT.md в любую нейросеть.',
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -528,9 +599,16 @@ class _AgentTab extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded, size: 17),
                 label: const Text('Обновить из шаблона'),
               ),
+              OutlinedButton.icon(
+                onPressed: provider.isWorking || !_hasDirtyChanges
+                    ? null
+                    : () => _saveManualAgent(context, provider),
+                icon: const Icon(Icons.save_outlined, size: 17),
+                label: Text(_hasDirtyChanges ? 'Сохранить правки*' : 'Сохранить правки'),
+              ),
               FilledButton.icon(
-                onPressed: provider.agentContent.isEmpty ? null : () async {
-                  await Clipboard.setData(ClipboardData(text: provider.agentContent));
+                onPressed: _agentController.text.isEmpty ? null : () async {
+                  await Clipboard.setData(ClipboardData(text: _agentController.text));
                   if (!context.mounted) return;
                   _showSnack(context, 'AGENT.md скопирован в буфер обмена.');
                 },
@@ -541,24 +619,43 @@ class _AgentTab extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFE5E9F1)), borderRadius: BorderRadius.circular(14)),
-              child: provider.agentContent.isEmpty
-                  ? const Center(child: Text('Файл agent.md не найден'))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: SelectableText(provider.agentContent, style: const TextStyle(fontFamily: 'Consolas', fontSize: 12.5, height: 1.55, color: Color(0xFF364158))),
-                    ),
+            child: TextField(
+              controller: _agentController,
+              expands: true,
+              minLines: null,
+              maxLines: null,
+              readOnly: false,
+              textAlignVertical: TextAlignVertical.top,
+              style: const TextStyle(
+                fontFamily: 'Consolas',
+                fontSize: 12.5,
+                height: 1.55,
+                color: Color(0xFF364158),
+              ),
+              onChanged: (_) {
+                if (!_hasDirtyChanges) {
+                  setState(() => _hasDirtyChanges = true);
+                }
+              },
+              decoration: const InputDecoration(
+                hintText: 'Введите или отредактируйте инструкцию agent.md...',
+                hintStyle: TextStyle(fontFamily: 'Consolas', fontSize: 12, color: Color(0xFF9AA3B3)),
+                alignLabelWithHint: true,
+                filled: true,
+                fillColor: Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 10),
-          Text('Каждый проект хранит собственную копию agent.md. Изменение шаблона не меняет уже созданные инструкции автоматически.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF8A94A6))),
+          Text(
+            'Каждый проект хранит собственную копию agent.md. Ручные правки сохраняются кнопкой «Сохранить правки»; изменение шаблона не меняет уже созданные инструкции автоматически.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFF8A94A6)),
+          ),
         ],
       ),
     );
   }
 }
-
 class _ImportTab extends StatefulWidget {
   const _ImportTab();
 
@@ -988,6 +1085,97 @@ class _FilesToPromptDialogState extends State<_FilesToPromptDialog> {
       ],
     );
   }
+}
+
+Future<void> _showRenameProjectDialog(
+  BuildContext context,
+  ProjectProvider provider,
+  CodeProject project,
+) async {
+  final controller = TextEditingController(text: project.name);
+  var saving = false;
+  var errorText = '';
+
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            title: const Text('Переименовать проект'),
+            content: SizedBox(
+              width: 460,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Новое название проекта', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    readOnly: false,
+                    enabled: !saving,
+                    onChanged: (_) {
+                      if (errorText.isNotEmpty) setDialogState(() => errorText = '');
+                      setDialogState(() {});
+                    },
+                    decoration: const InputDecoration(hintText: 'Введите название проекта'),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Имя Flutter-пакета: ${provider.packageNameFor(controller.text)}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF69758B)),
+                  ),
+                  if (errorText.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(errorText, style: const TextStyle(color: Color(0xFFB74444), fontSize: 12)),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final clean = controller.text.trim();
+                        if (clean.isEmpty) {
+                          setDialogState(() => errorText = 'Введите название проекта.');
+                          return;
+                        }
+                        setDialogState(() {
+                          saving = true;
+                          errorText = '';
+                        });
+                        try {
+                          await provider.renameCurrentProject(clean);
+                          if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                        } catch (error) {
+                          setDialogState(() {
+                            errorText = error.toString().replaceFirst('Bad state: ', '');
+                          });
+                        } finally {
+                          if (dialogContext.mounted) setDialogState(() => saving = false);
+                        }
+                      },
+                child: saving
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Сохранить'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  controller.dispose();
 }
 
 Future<void> _showCreateProjectDialog(BuildContext context, ProjectProvider provider) async {

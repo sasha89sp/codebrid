@@ -23,14 +23,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _autoDeployEnabled = false;
   bool _deleteZipAfterDeploy = false;
   bool _cleanBeforeExtract = false;
-  bool _buildCaptureEnabled = false;
-  bool _buildAskTargetBeforeExtract = false;
-  bool _buildTakeAllPublicBuilds = true;
-  bool _buildOverlayPrevious = true;
-  bool _buildClearBeforeApply = false;
-  final TextEditingController _buildTargetDirController = TextEditingController();
-  final TextEditingController _buildFilterController = TextEditingController();
-  final TextEditingController _buildPreservedController = TextEditingController();
+  bool _autoSyncOnReject = true;
   String? _shownPendingZipPath;
 
   @override
@@ -39,9 +32,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
     _repoUrlController.dispose();
     _branchController.dispose();
     _filterController.dispose();
-    _buildTargetDirController.dispose();
-    _buildFilterController.dispose();
-    _buildPreservedController.dispose();
     super.dispose();
   }
 
@@ -57,14 +47,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       _autoDeployEnabled = project.autoDeployEnabled;
       _deleteZipAfterDeploy = project.deleteZipAfterDeploy;
       _cleanBeforeExtract = project.cleanBeforeExtract;
-      _buildCaptureEnabled = project.buildCaptureEnabled;
-      _buildAskTargetBeforeExtract = project.buildAskTargetBeforeExtract;
-      _buildTakeAllPublicBuilds = project.buildTakeAllPublicBuilds;
-      _buildOverlayPrevious = project.buildOverlayPrevious;
-      _buildClearBeforeApply = project.buildClearBeforeApply;
-      _buildTargetDirController.text = project.buildTargetDirectory;
-      _buildFilterController.text = project.buildZipFilter;
-      _buildPreservedController.text = project.buildPreservedFiles;
+      _autoSyncOnReject = project.autoSyncOnReject;
     }
   }
 
@@ -97,6 +80,7 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       zipNameFilter: _filterController.text,
       deleteZipAfterDeploy: _deleteZipAfterDeploy,
       cleanBeforeExtract: _cleanBeforeExtract,
+      autoSyncOnReject: _autoSyncOnReject,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -104,140 +88,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
     );
   }
 
-  Future<void> _saveBuildCaptureSettings(ProjectProvider provider) async {
-    await provider.updateCurrentProjectBuildSettings(
-      buildCaptureEnabled: _buildCaptureEnabled,
-      buildAskTargetBeforeExtract: _buildAskTargetBeforeExtract,
-      buildTargetDirectory: _buildTargetDirController.text,
-      buildZipFilter: _buildFilterController.text,
-      buildPreservedFiles: _buildPreservedController.text,
-      buildTakeAllPublicBuilds: _buildTakeAllPublicBuilds,
-      buildOverlayPrevious: _buildOverlayPrevious,
-      buildClearBeforeApply: _buildClearBeforeApply,
-    );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Настройки перехвата сборок сохранены.')),
-    );
-  }
-
-  Future<void> _pickBuildTargetFolder() async {
-    final selected = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Выберите папку для сохранения и сборки версий проекта',
-      initialDirectory: _buildTargetDirController.text.trim().isEmpty
-          ? null
-          : _buildTargetDirController.text.trim(),
-    );
-    if (selected == null || selected.trim().isEmpty || !mounted) return;
-    setState(() => _buildTargetDirController.text = selected);
-  }
-
-  Future<void> _pickAndApplyBuildZip(ProjectProvider provider) async {
-    final picked = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Выберите архив скомпилированного проекта',
-      type: FileType.custom,
-      allowedExtensions: const <String>['zip'],
-    );
-    final path = picked?.files.single.path;
-    if (path == null || path.isEmpty) return;
-    await provider.applyBuildArchive(
-      path,
-      customTargetDirectory: _buildTargetDirController.text.trim().isEmpty
-          ? null
-          : _buildTargetDirController.text.trim(),
-    );
-  }
-
-  void _maybeShowPendingBuildDialog(BuildContext context, ProjectProvider provider) {
-    final pendingZip = provider.pendingBuildZipPath;
-    if (pendingZip == null || _shownPendingZipPath == pendingZip) return;
-    _shownPendingZipPath = pendingZip;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!context.mounted || provider.pendingBuildZipPath != pendingZip) return;
-      final dirCtrl = TextEditingController(
-        text: provider.pendingBuildSuggestedDir ?? '',
-      );
-      final confirmedPath = await showDialog<String?>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          return StatefulBuilder(
-            builder: (dialogContext, setLocalState) {
-              return AlertDialog(
-                title: const Text('Перехвачен архив сборки'),
-                content: SizedBox(
-                  width: 520,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Файл: ${dirCtrl.text.isEmpty ? pendingZip : pendingZip.split(RegExp(r'[/\\]')).last}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Старая версия из current будет сохранена в _history, а поверх неё накопится новый архив.',
-                        style: TextStyle(fontSize: 12.5, color: Color(0xFF5C687D)),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: dirCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Папка назначения сборок',
-                                hintText: 'По умолчанию data/builds/<имя_архива>',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            tooltip: 'Выбрать папку',
-                            onPressed: () async {
-                              final picked = await FilePicker.platform.getDirectoryPath(
-                                dialogTitle: 'Выберите папку для распаковки сборки',
-                                initialDirectory: dirCtrl.text.trim().isEmpty ? null : dirCtrl.text.trim(),
-                              );
-                              if (picked != null && picked.trim().isNotEmpty) {
-                                setLocalState(() => dirCtrl.text = picked);
-                              }
-                            },
-                            icon: const Icon(Icons.folder_open),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(null),
-                    child: const Text('Отмена'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(dirCtrl.text.trim()),
-                    child: const Text('Сохранить старую и собрать новую'),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      );
-      dirCtrl.dispose();
-      if (!context.mounted) return;
-      if (confirmedPath == null) {
-        provider.dismissPendingBuild();
-      } else {
-        await provider.confirmPendingBuild(
-          chosenTargetDirectory: confirmedPath.isEmpty ? null : confirmedPath,
-        );
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +97,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       return const Center(child: Text('Выберите проект'));
     }
     _syncFromProvider(provider, project);
-    _maybeShowPendingBuildDialog(context, provider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
@@ -317,114 +166,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
           ),
           const SizedBox(height: 16),
           _CardSection(
-            title: '1b. Перехват скомпилированного архива и обновление версии',
-            trailing: OutlinedButton.icon(
-              onPressed: provider.isDeploying ? null : () => _pickAndApplyBuildZip(provider),
-              icon: const Icon(Icons.layers_outlined, size: 17),
-              label: const Text('Собрать из ZIP'),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Перехватывать готовый архив сборки из «Загрузок»'),
-                  subtitle: const Text(
-                    'Сохраняет текущую версию в _history, а поверх неё накатывает новый архив, перенося настройки в current.',
-                  ),
-                  value: _buildCaptureEnabled,
-                  onChanged: (bool value) => setState(() => _buildCaptureEnabled = value),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Спрашивать / давать выбрать папку при каждом перехвате архива'),
-                  value: _buildAskTargetBeforeExtract,
-                  onChanged: (bool? value) =>
-                      setState(() => _buildAskTargetBeforeExtract = value ?? false),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Публичные сборки: брать все подходящие ZIP-архивы без отсева по фильтру'),
-                  value: _buildTakeAllPublicBuilds,
-                  onChanged: (bool? value) =>
-                      setState(() => _buildTakeAllPublicBuilds = value ?? true),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Сохранять оверлей старой версии поверх (перенос настроек и файлов)'),
-                  value: _buildOverlayPrevious,
-                  onChanged: (bool? value) =>
-                      setState(() => _buildOverlayPrevious = value ?? true),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Очищать перед сборкой (собирать current только из нового архива)'),
-                  value: _buildClearBeforeApply,
-                  onChanged: (bool? value) =>
-                      setState(() => _buildClearBeforeApply = value ?? false),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _buildTargetDirController,
-                        decoration: const InputDecoration(
-                          labelText: 'Папка для сборок по умолчанию (необязательно)',
-                          hintText: r'По умолчанию data/builds/<имя_архива> (внутри: _history и current)',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    OutlinedButton.icon(
-                      onPressed: _pickBuildTargetFolder,
-                      icon: const Icon(Icons.folder_open_outlined, size: 18),
-                      label: const Text('Выбрать'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _buildFilterController,
-                        decoration: const InputDecoration(
-                          labelText: 'Фильтр имени архива сборки',
-                          hintText: 'Например: _rel или rocketdock_windows',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _buildPreservedController,
-                        decoration: const InputDecoration(
-                          labelText: 'Не перезаписывать из нового ZIP (через запятую)',
-                          hintText: 'Например: Settings.ini, config.json',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilledButton.icon(
-                    onPressed: () => _saveBuildCaptureSettings(provider),
-                    icon: const Icon(Icons.save_outlined, size: 18),
-                    label: const Text('Сохранить настройки сборки'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          _CardSection(
             title: '2. Настройки GitHub для проекта «${project.name}»',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -488,6 +229,14 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                   value: _deleteZipAfterDeploy,
                   onChanged: (bool? value) =>
                       setState(() => _deleteZipAfterDeploy = value ?? false),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Автоматически синхронизировать ветку с GitHub при отклонении push (pull / merge)'),
+                  value: _autoSyncOnReject,
+                  onChanged: (bool? value) =>
+                      setState(() => _autoSyncOnReject = value ?? true),
                 ),
                 const SizedBox(height: 12),
                 Row(

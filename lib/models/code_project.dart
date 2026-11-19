@@ -15,6 +15,7 @@ class CodeProject {
     this.zipNameFilter = '',
     this.deleteZipAfterDeploy = false,
     this.cleanBeforeExtract = false,
+    this.autoSyncOnReject = true,
     this.buildCaptureEnabled = false,
     this.buildAskTargetBeforeExtract = false,
     this.buildTargetDirectory = '',
@@ -47,6 +48,7 @@ class CodeProject {
   final String zipNameFilter;
   final bool deleteZipAfterDeploy;
   final bool cleanBeforeExtract;
+  final bool autoSyncOnReject;
   final bool buildCaptureEnabled;
   final bool buildAskTargetBeforeExtract;
   final String buildTargetDirectory;
@@ -69,6 +71,7 @@ class CodeProject {
     String? zipNameFilter,
     bool? deleteZipAfterDeploy,
     bool? cleanBeforeExtract,
+    bool? autoSyncOnReject,
     bool? buildCaptureEnabled,
     bool? buildAskTargetBeforeExtract,
     String? buildTargetDirectory,
@@ -94,6 +97,7 @@ class CodeProject {
       zipNameFilter: zipNameFilter ?? this.zipNameFilter,
       deleteZipAfterDeploy: deleteZipAfterDeploy ?? this.deleteZipAfterDeploy,
       cleanBeforeExtract: cleanBeforeExtract ?? this.cleanBeforeExtract,
+      autoSyncOnReject: autoSyncOnReject ?? this.autoSyncOnReject,
       buildCaptureEnabled: buildCaptureEnabled ?? this.buildCaptureEnabled,
       buildAskTargetBeforeExtract: buildAskTargetBeforeExtract ?? this.buildAskTargetBeforeExtract,
       buildTargetDirectory: buildTargetDirectory ?? this.buildTargetDirectory,
@@ -121,6 +125,7 @@ class CodeProject {
         'zipNameFilter': zipNameFilter,
         'deleteZipAfterDeploy': deleteZipAfterDeploy,
         'cleanBeforeExtract': cleanBeforeExtract,
+        'autoSyncOnReject': autoSyncOnReject,
         'buildCaptureEnabled': buildCaptureEnabled,
         'buildAskTargetBeforeExtract': buildAskTargetBeforeExtract,
         'buildTargetDirectory': buildTargetDirectory,
@@ -155,6 +160,7 @@ class CodeProject {
       zipNameFilter: (json['zipNameFilter'] as String? ?? '').trim(),
       deleteZipAfterDeploy: json['deleteZipAfterDeploy'] == true,
       cleanBeforeExtract: json['cleanBeforeExtract'] == true,
+      autoSyncOnReject: json['autoSyncOnReject'] != false,
       buildCaptureEnabled: json['buildCaptureEnabled'] == true,
       buildAskTargetBeforeExtract: json['buildAskTargetBeforeExtract'] == true,
       buildTargetDirectory: json['buildTargetDirectory']?.toString() ?? '',
