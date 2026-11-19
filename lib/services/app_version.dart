@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.65';
-  static const int currentBuildNumber = 65;
+  static const String currentVersion = '2.1.66';
+  static const int currentBuildNumber = 66;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.66',
+      buildNumber: 66,
+      title: 'Разделены опции копирования и перемещения ZIP-архива в папку версий после push',
+      summary: 'В настройках авто-деплоя появились две отдельные включаемые/выключаемые опции: копирование ZIP в папку версий (исходный файл остаётся) и перемещение ZIP в папку версий (исходный файл удаляется в изначальной папке).',
+      changes: [
+        'Переименована опция сохранения в папку версий в «Автоматически копировать ZIP-архив после успешного push в папку версий (сохраняя все версии, исходный файл остаётся)»',
+        'Добавлена отдельная опция «Автоматически перемещать ZIP-архив после успешного push в папку версий (удаляет исходный файл в изначальной папке)»',
+        'Обновлена версия до 2.1.66+66 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.65',
       buildNumber: 65,
@@ -93,17 +104,6 @@ class AppVersion {
         'Добавлена модель ProjectNotesStore / ProjectNoteFolder / ProjectNoteItem и сохранение заметок строго внутри каталога выбранного проекта (notes.json)',
         'Добавлена вкладка «Заметки» (ProjectNotesTab) с папками, поиском, быстрой кнопкой «Записать баг» и встроенным редактором заметок',
         'Обновлена версия до 2.1.59+59 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.58',
-      buildNumber: 58,
-      title: 'Сохранение развёрнутого состояния окна после сворачивания и разворачивания',
-      summary: 'При сворачивании окна, развёрнутого на весь экран, запоминается его состояние максимизации/полного экрана, и при возврате из панели задач или трея окно снова открывается на весь экран.',
-      changes: [
-        'В MacOsWindowTitleBar добавлено запоминание состояния максимизации/полного экрана перед сворачиванием и автоматическое восстановление при возврате окна',
-        'В WindowSizeListener и AppTrayService защищено сохранение флагов windowIsMaximized/windowIsFullScreen при сворачивании окна',
-        'Обновлена версия до 2.1.58+58 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

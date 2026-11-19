@@ -537,6 +537,7 @@ class ProjectProvider extends ChangeNotifier {
     required bool cleanBeforeExtract,
     bool autoSyncOnReject = true,
     bool moveZipAfterPush = true,
+    bool moveZipToVersionsAndDeleteSource = false,
     String zipArchiveFolder = '',
   }) async {
     final project = currentProject;
@@ -551,6 +552,7 @@ class ProjectProvider extends ChangeNotifier {
       cleanBeforeExtract: cleanBeforeExtract,
       autoSyncOnReject: autoSyncOnReject,
       moveZipAfterPush: moveZipAfterPush,
+      moveZipToVersionsAndDeleteSource: moveZipToVersionsAndDeleteSource,
       zipArchiveFolder: zipArchiveFolder.trim(),
     );
     await storage.updateProject(updated);
@@ -948,7 +950,9 @@ class ProjectProvider extends ChangeNotifier {
       if (gitResult.success) {
         infoMessage = gitResult.message;
         final zipFile = File(zipPath);
-        if (project.moveZipAfterPush) {
+        final shouldSaveToVersions =
+            project.moveZipAfterPush || project.moveZipToVersionsAndDeleteSource;
+        if (shouldSaveToVersions) {
           try {
             if (await zipFile.exists()) {
               final archiveDirPath = project.zipArchiveFolder.trim().isNotEmpty
@@ -973,17 +977,23 @@ class ProjectProvider extends ChangeNotifier {
                 }
               }
 
-              if (project.deleteZipAfterDeploy) {
+              final shouldRemoveSource =
+                  project.moveZipToVersionsAndDeleteSource || project.deleteZipAfterDeploy;
+              if (shouldRemoveSource) {
                 try {
                   await zipFile.rename(destPath);
                 } on FileSystemException {
                   await zipFile.copy(destPath);
                   await zipFile.delete();
                 }
-                _appendDeployLog('ZIP перенесён в историю версий и удалён из исходной папки: $destPath');
+                _appendDeployLog(
+                  'ZIP перемещён в папку версий и удалён из исходной папки: $destPath',
+                );
               } else {
                 await zipFile.copy(destPath);
-                _appendDeployLog('ZIP сохранён в историю версий: $destPath');
+                _appendDeployLog(
+                  'ZIP скопирован в папку версий (исходный файл оставлен): $destPath',
+                );
               }
             }
           } catch (error) {

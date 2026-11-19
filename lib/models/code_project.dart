@@ -17,6 +17,7 @@ class CodeProject {
     this.cleanBeforeExtract = false,
     this.autoSyncOnReject = true,
     this.moveZipAfterPush = true,
+    this.moveZipToVersionsAndDeleteSource = false,
     this.zipArchiveFolder = '',
     this.buildCaptureEnabled = false,
     this.buildAskTargetBeforeExtract = false,
@@ -56,6 +57,7 @@ class CodeProject {
   final bool cleanBeforeExtract;
   final bool autoSyncOnReject;
   final bool moveZipAfterPush;
+  final bool moveZipToVersionsAndDeleteSource;
   final String zipArchiveFolder;
   final bool buildCaptureEnabled;
   final bool buildAskTargetBeforeExtract;
@@ -85,6 +87,7 @@ class CodeProject {
     bool? cleanBeforeExtract,
     bool? autoSyncOnReject,
     bool? moveZipAfterPush,
+    bool? moveZipToVersionsAndDeleteSource,
     String? zipArchiveFolder,
     bool? buildCaptureEnabled,
     bool? buildAskTargetBeforeExtract,
@@ -117,6 +120,7 @@ class CodeProject {
       cleanBeforeExtract: cleanBeforeExtract ?? this.cleanBeforeExtract,
       autoSyncOnReject: autoSyncOnReject ?? this.autoSyncOnReject,
       moveZipAfterPush: moveZipAfterPush ?? this.moveZipAfterPush,
+      moveZipToVersionsAndDeleteSource: moveZipToVersionsAndDeleteSource ?? this.moveZipToVersionsAndDeleteSource,
       zipArchiveFolder: zipArchiveFolder ?? this.zipArchiveFolder,
       buildCaptureEnabled: buildCaptureEnabled ?? this.buildCaptureEnabled,
       buildAskTargetBeforeExtract: buildAskTargetBeforeExtract ?? this.buildAskTargetBeforeExtract,
@@ -151,6 +155,7 @@ class CodeProject {
         'cleanBeforeExtract': cleanBeforeExtract,
         'autoSyncOnReject': autoSyncOnReject,
         'moveZipAfterPush': moveZipAfterPush,
+        'moveZipToVersionsAndDeleteSource': moveZipToVersionsAndDeleteSource,
         'zipArchiveFolder': zipArchiveFolder,
         'buildCaptureEnabled': buildCaptureEnabled,
         'buildAskTargetBeforeExtract': buildAskTargetBeforeExtract,
@@ -192,6 +197,7 @@ class CodeProject {
       cleanBeforeExtract: json['cleanBeforeExtract'] == true,
       autoSyncOnReject: json['autoSyncOnReject'] != false,
       moveZipAfterPush: json['moveZipAfterPush'] != false,
+      moveZipToVersionsAndDeleteSource: json['moveZipToVersionsAndDeleteSource'] == true,
       zipArchiveFolder: (json['zipArchiveFolder'] as String? ?? '').trim(),
       buildCaptureEnabled: json['buildCaptureEnabled'] == true,
       buildAskTargetBeforeExtract: json['buildAskTargetBeforeExtract'] == true,
