@@ -53,6 +53,9 @@ class ProjectProvider extends ChangeNotifier {
   String? pendingBuildZipPath;
   String? pendingBuildSuggestedDir;
   String? lastBuildArchiveName;
+  String? lastBuildAutoCheckAt;
+  String? lastBuildAutoCheckSummary;
+  final List<String> unpackLogs = <String>[];
   String githubToken = '';
   String githubOwner = '';
   late final BackupCoordinator _backupCoordinator = BackupCoordinator(
@@ -610,6 +613,8 @@ class ProjectProvider extends ChangeNotifier {
     bool buildClearBeforeApply = false,
     bool buildAutoFetchEnabled = false,
     int buildAutoFetchIntervalMinutes = 5,
+    bool buildAutoLaunchExe = false,
+    int buildHistoryKeepCount = 10,
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -624,6 +629,8 @@ class ProjectProvider extends ChangeNotifier {
       buildClearBeforeApply: buildClearBeforeApply,
       buildAutoFetchEnabled: buildAutoFetchEnabled,
       buildAutoFetchIntervalMinutes: buildAutoFetchIntervalMinutes.clamp(1, 120),
+      buildAutoLaunchExe: buildAutoLaunchExe,
+      buildHistoryKeepCount: buildHistoryKeepCount.clamp(1, 200),
     );
     await storage.updateProject(updated);
     currentProject = updated;
@@ -685,6 +692,15 @@ class ProjectProvider extends ChangeNotifier {
           infoMessage = 'Скачана новая сборка с GitHub: ${item.fileName}';
         }
       }
+      final nowStamp = DateTime.now();
+      String two(int n) => n.toString().padLeft(2, '0');
+      lastBuildAutoCheckAt = '${two(nowStamp.hour)}:${two(nowStamp.minute)}:${two(nowStamp.second)}';
+      lastBuildAutoCheckSummary = res.fetchedZips.isNotEmpty
+          ? 'Скачано сборок: ${res.fetchedZips.length}'
+          : (res.success ? 'Новых сборок нет' : (res.errorMessage ?? 'Ошибка проверки'));
+      for (final line in res.logs) {
+        _appendUnpackLog(line);
+      }
       if (!silent && res.success && res.fetchedZips.isEmpty) {
         infoMessage = 'Новых готовых сборок на GitHub не найдено.';
       }
@@ -730,6 +746,7 @@ class ProjectProvider extends ChangeNotifier {
     errorMessage = null;
     lastDeployStatus = 'Сборка новой версии из ${p.basename(zipPath)}...';
     _appendDeployLog('--- Перехват скомпилированного архива: ${p.basename(zipPath)} ---');
+    _appendUnpackLog('--- Распаковка архива сборки: ${p.basename(zipPath)} ---');
     notifyListeners();
 
     try {
@@ -750,10 +767,13 @@ class ProjectProvider extends ChangeNotifier {
         preservedPatterns: preserved,
         overlayPreviousVersion: project.buildOverlayPrevious,
         clearTargetBeforeApply: project.buildClearBeforeApply,
+        historyKeepCount: project.buildHistoryKeepCount,
+        autoLaunchExe: project.buildAutoLaunchExe,
       );
 
       for (final line in result.logs) {
         _appendDeployLog(line);
+        _appendUnpackLog(line);
       }
       lastDeployStatus = result.message;
       if (result.success) {
@@ -764,6 +784,7 @@ class ProjectProvider extends ChangeNotifier {
     } catch (error) {
       final msg = error is FormatException ? error.message : error.toString();
       _appendDeployLog('Ошибка сборки версии: $msg');
+      _appendUnpackLog('Ошибка сборки версии: $msg');
       lastDeployStatus = 'Ошибка: $msg';
       errorMessage = msg;
     } finally {
@@ -1015,6 +1036,22 @@ class ProjectProvider extends ChangeNotifier {
     } finally {
       isWorking = false;
       notifyListeners();
+    }
+  }
+
+  void clearUnpackLogs() {
+    unpackLogs.clear();
+    notifyListeners();
+  }
+
+  void _appendUnpackLog(String message) {
+    final now = DateTime.now();
+    final hh = now.hour.toString().padLeft(2, '0');
+    final mm = now.minute.toString().padLeft(2, '0');
+    final ss = now.second.toString().padLeft(2, '0');
+    unpackLogs.add('[$hh:$mm:$ss] $message');
+    if (unpackLogs.length > 200) {
+      unpackLogs.removeRange(0, unpackLogs.length - 200);
     }
   }
 

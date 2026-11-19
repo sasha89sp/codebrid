@@ -46,6 +46,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
     _buildClearBeforeApply = project.buildClearBeforeApply;
     _buildAutoFetchEnabled = project.buildAutoFetchEnabled;
     _buildAutoFetchIntervalMinutes = project.buildAutoFetchIntervalMinutes;
+    _buildAutoLaunchExe = project.buildAutoLaunchExe;
+    _buildHistoryKeepCount = project.buildHistoryKeepCount;
     _targetDirController.text = project.buildTargetDirectory;
     _filterController.text = project.buildZipFilter;
     _preservedController.text = project.buildPreservedFiles;
@@ -63,6 +65,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
       buildClearBeforeApply: _buildClearBeforeApply,
       buildAutoFetchEnabled: _buildAutoFetchEnabled,
       buildAutoFetchIntervalMinutes: _buildAutoFetchIntervalMinutes,
+      buildAutoLaunchExe: _buildAutoLaunchExe,
+      buildHistoryKeepCount: _buildHistoryKeepCount,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -274,6 +278,34 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                   onChanged: (bool? value) =>
                       setState(() => _buildClearBeforeApply = value ?? false),
                 ),
+                const SizedBox(height: 6),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Автозапускать собранный .exe после распаковки'),
+                  value: _buildAutoLaunchExe,
+                  onChanged: (bool? value) =>
+                      setState(() => _buildAutoLaunchExe = value ?? false),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: 240,
+                  child: DropdownButtonFormField<int>(
+                    value: _buildHistoryKeepCount,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Хранить копий в _history'),
+                    items: const <DropdownMenuItem<int>>[
+                      DropdownMenuItem<int>(value: 3, child: Text('3 версии')),
+                      DropdownMenuItem<int>(value: 5, child: Text('5 версий')),
+                      DropdownMenuItem<int>(value: 10, child: Text('10 версий')),
+                      DropdownMenuItem<int>(value: 20, child: Text('20 версий')),
+                      DropdownMenuItem<int>(value: 50, child: Text('50 версий')),
+                    ],
+                    onChanged: (int? val) {
+                      if (val != null) setState(() => _buildHistoryKeepCount = val);
+                    },
+                  ),
+                ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -375,6 +407,80 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
             ),
           ),
         ],
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE4E9F2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Журнал распаковки сборок',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF202A40),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: provider.unpackLogs.isEmpty ? null : provider.clearUnpackLogs,
+                      child: const Text('Очистить'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (provider.lastBuildAutoCheckAt != null) ...[
+                  Text(
+                    'Последняя проверка GitHub: ${provider.lastBuildAutoCheckAt}${provider.lastBuildAutoCheckSummary != null ? ' (${provider.lastBuildAutoCheckSummary})' : ''}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF202A40),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                Container(
+                  height: 220,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141A26),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: provider.unpackLogs.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Событий пока нет. Выберите архив сборки или включите автозагрузку/перехват.',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          child: SelectableText(
+                            provider.unpackLogs.join('\n'),
+                            style: const TextStyle(
+                              fontFamily: 'Consolas',
+                              fontSize: 12.5,
+                              height: 1.45,
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
       ),
     );
   }

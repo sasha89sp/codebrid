@@ -10,6 +10,7 @@ class BuildBundleResult {
     required this.logs,
     this.targetDirectory,
     this.backupDirectory,
+    this.launchedExePath,
   });
 
   final bool success;
@@ -17,6 +18,7 @@ class BuildBundleResult {
   final List<String> logs;
   final String? targetDirectory;
   final String? backupDirectory;
+  final String? launchedExePath;
 }
 
 class BuildBundleService {
@@ -73,6 +75,8 @@ class BuildBundleService {
     List<String> preservedPatterns = const <String>[],
     bool overlayPreviousVersion = true,
     bool clearTargetBeforeApply = false,
+    int historyKeepCount = 10,
+    bool autoLaunchExe = false,
   }) async {
     final logs = <String>[];
     final zipFile = File(zipPath);
@@ -176,10 +180,17 @@ class BuildBundleService {
 
       logs.add('Накачано новых файлов поверх старой версии: $extractedCount');
 
-      // Заменяем содержимое current готовой обновлённой версией.
-      await _clearDirectory(currentDir);
-      await _copyDirectoryContents(stagingDir, currentDir);
+      // Заменяем содержимое current готовой обновлённой версией с учётом возможных блокировок файлов.
+      await _clearDirectorySafe(currentDir, logs);
+      await _copyDirectoryContentsSafe(stagingDir, currentDir, logs);
       logs.add('Обновлённая сборка готова в: ${currentDir.path}');
+
+      await _pruneHistory(historyRoot, historyKeepCount.clamp(1, 200), logs);
+
+      String? launchedExe;
+      if (autoLaunchExe) {
+        launchedExe = await _launchNewestExeIfAny(currentDir, logs);
+      }
 
       return BuildBundleResult(
         success: true,
@@ -187,6 +198,7 @@ class BuildBundleService {
         logs: logs,
         targetDirectory: currentDir.path,
         backupDirectory: backupPath,
+        launchedExePath: launchedExe,
       );
     } finally {
       if (await stagingDir.exists()) {
@@ -302,3 +314,97 @@ class BuildBundleService {
     return '${dt.year}${two(dt.month)}${two(dt.day)}_${two(dt.hour)}${two(dt.minute)}${two(dt.second)}_$ms';
   }
 }
+
+  static Future<void> _clearDirectorySafe(Directory dir, List<String> logs) async {
+    if (!await dir.exists()) return;
+    await for (final entity in dir.list(followLinks: false)) {
+      try {
+        await entity.delete(recursive: true);
+      } catch (e) {
+        logs.add('Предупреждение: не удалось удалить "${p.basename(entity.path)}" (возможно, файл занят): $e');
+      }
+    }
+  }
+
+  static Future<void> _copyDirectoryContentsSafe(
+    Directory source,
+    Directory destination,
+    List<String> logs,
+  ) async {
+    if (!await source.exists()) return;
+    await destination.create(recursive: true);
+    final srcRoot = p.normalize(source.absolute.path);
+    final dstRoot = p.normalize(destination.absolute.path);
+
+    await for (final entity in source.list(recursive: true, followLinks: false)) {
+      final rel = p.relative(entity.path, from: srcRoot);
+      final targetPath = p.join(dstRoot, rel);
+      try {
+        if (entity is Directory) {
+          await Directory(targetPath).create(recursive: true);
+        } else if (entity is File) {
+          await File(targetPath).parent.create(recursive: true);
+          await entity.copy(targetPath);
+        }
+      } catch (e) {
+        logs.add('Предупреждение: не удалось скопировать "$rel" (возможно, файл открыт): $e');
+      }
+    }
+  }
+
+  static Future<void> _pruneHistory(
+    Directory historyRoot,
+    int keepCount,
+    List<String> logs,
+  ) async {
+    if (!await historyRoot.exists()) return;
+    final entries = <FileSystemEntity>[];
+    await for (final item in historyRoot.list(followLinks: false)) {
+      entries.add(item);
+    }
+    if (entries.length <= keepCount) return;
+    entries.sort((a, b) {
+      final sa = a.statSync().modified;
+      final sb = b.statSync().modified;
+      return sb.compareTo(sa);
+    });
+    for (final stale in entries.skip(keepCount)) {
+      try {
+        await stale.delete(recursive: true);
+        logs.add('Удалена старая версия из _history: ${p.basename(stale.path)}');
+      } catch (e) {
+        logs.add('Не удалось удалить старую версию ${p.basename(stale.path)}: $e');
+      }
+    }
+  }
+
+  static Future<String?> _launchNewestExeIfAny(Directory currentDir, List<String> logs) async {
+    if (!await currentDir.exists()) return null;
+    final exeFiles = <File>[];
+    await for (final entity in currentDir.list(recursive: true, followLinks: false)) {
+      if (entity is File && entity.path.toLowerCase().endsWith('.exe')) {
+        final base = p.basename(entity.path).toLowerCase();
+        if (base == 'createdump.exe') continue;
+        exeFiles.add(entity);
+      }
+    }
+    if (exeFiles.isEmpty) {
+      logs.add('Автозапуск включён, но в ${currentDir.path} не найден .exe файл.');
+      return null;
+    }
+    exeFiles.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+    final exe = exeFiles.first;
+    try {
+      await Process.start(
+        exe.absolute.path,
+        const <String>[],
+        workingDirectory: p.dirname(exe.absolute.path),
+        mode: ProcessStartMode.detached,
+      );
+      logs.add('Запущена новая сборка: ${exe.path}');
+      return exe.path;
+    } catch (e) {
+      logs.add('Не удалось запустить ${exe.path}: $e');
+      return null;
+    }
+  }

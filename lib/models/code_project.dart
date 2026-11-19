@@ -28,6 +28,8 @@ class CodeProject {
     this.buildClearBeforeApply = false,
     this.buildAutoFetchEnabled = false,
     this.buildAutoFetchIntervalMinutes = 5,
+    this.buildAutoLaunchExe = false,
+    this.buildHistoryKeepCount = 10,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -65,6 +67,8 @@ class CodeProject {
   final bool buildClearBeforeApply;
   final bool buildAutoFetchEnabled;
   final int buildAutoFetchIntervalMinutes;
+  final bool buildAutoLaunchExe;
+  final int buildHistoryKeepCount;
 
   CodeProject copyWith({
     String? name,
@@ -92,6 +96,8 @@ class CodeProject {
     bool? buildClearBeforeApply,
     bool? buildAutoFetchEnabled,
     int? buildAutoFetchIntervalMinutes,
+    bool? buildAutoLaunchExe,
+    int? buildHistoryKeepCount,
   }) {
     return CodeProject(
       id: id,
@@ -122,6 +128,8 @@ class CodeProject {
       buildClearBeforeApply: buildClearBeforeApply ?? this.buildClearBeforeApply,
       buildAutoFetchEnabled: buildAutoFetchEnabled ?? this.buildAutoFetchEnabled,
       buildAutoFetchIntervalMinutes: buildAutoFetchIntervalMinutes ?? this.buildAutoFetchIntervalMinutes,
+      buildAutoLaunchExe: buildAutoLaunchExe ?? this.buildAutoLaunchExe,
+      buildHistoryKeepCount: buildHistoryKeepCount ?? this.buildHistoryKeepCount,
     );
   }
 
@@ -154,6 +162,8 @@ class CodeProject {
         'buildClearBeforeApply': buildClearBeforeApply,
         'buildAutoFetchEnabled': buildAutoFetchEnabled,
         'buildAutoFetchIntervalMinutes': buildAutoFetchIntervalMinutes,
+        'buildAutoLaunchExe': buildAutoLaunchExe,
+        'buildHistoryKeepCount': buildHistoryKeepCount,
       };
 
   factory CodeProject.fromJson(
@@ -193,6 +203,8 @@ class CodeProject {
       buildClearBeforeApply: json['buildClearBeforeApply'] == true,
       buildAutoFetchEnabled: json['buildAutoFetchEnabled'] == true,
       buildAutoFetchIntervalMinutes: (json['buildAutoFetchIntervalMinutes'] as num?)?.toInt() ?? 5,
+      buildAutoLaunchExe: json['buildAutoLaunchExe'] == true,
+      buildHistoryKeepCount: ((json['buildHistoryKeepCount'] as num?)?.toInt() ?? 10).clamp(1, 200),
     );
   }
 

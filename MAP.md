@@ -8,6 +8,7 @@
 - `lib/widgets/auto_deploy_tab.dart` — вкладка «Авто-деплой»: мониторинг «Загрузок», настройки Git/GitHub, папка версий ZIP, ручной выбор `.zip` и журнал деплоя.
 - `lib/widgets/build_capture_tab.dart` — вкладка «Распаковка сборок»: перехват и распаковка `.zip` сборок в `_history` и `current`, сохранение файлов, автопроверка/автоскачивание с GitHub.
 - `lib/widgets/section_header.dart` — заголовок секции.
+- `lib/widgets/template_manager_dialog.dart` — диалог создания, редактирования и сохранения шаблонов AGENT.md.
 - `lib/widgets/files_to_prompt_dialog.dart` — диалог сборки файлов/папки в промпт для ИИ.
 - `lib/widgets/project_dialogs.dart` — диалоги создания и переименования проекта.
 - `lib/widgets/about_backup_dialog.dart` — окно настроек, бэкапов и истории версий.

@@ -89,6 +89,8 @@ class GitHubBuildPollingCoordinator {
                 .toList(),
             overlayPreviousVersion: proj.buildOverlayPrevious,
             clearTargetBeforeApply: proj.buildClearBeforeApply,
+            historyKeepCount: proj.buildHistoryKeepCount,
+            autoLaunchExe: proj.buildAutoLaunchExe,
           );
           for (final line in result.logs) {
             onLog('[${proj.name}] $line');

@@ -17,11 +17,33 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.40';
-  static const int currentBuildNumber = 40;
+  static const String currentVersion = '2.1.42';
+  static const int currentBuildNumber = 42;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.42',
+      buildNumber: 42,
+      title: 'Полноценное создание и редактирование новых шаблонов в библиотеке',
+      summary: 'Вынесен диалог библиотеки шаблонов в lib/widgets/template_manager_dialog.dart, исправлена работа с черновиком нового шаблона, фокусом и сохранением.',
+      changes: [
+        'Вынесен TemplateManagerDialog в lib/widgets/template_manager_dialog.dart с явным управлением состоянием черновика нового шаблона',
+        'Исправлено выделение/редактирование названия и текста нового шаблона с сохранением через provider.saveTemplate',
+        'Обновлена карта модулей MAP.md и версия сборки до 2.1.42+42',
+      ],
+    ),
+    ReleaseEntry(
+      version: '2.1.41',
+      buildNumber: 41,
+      title: 'Журнал распаковки в стиле авто-деплоя, ротация _history и автозапуск .exe',
+      summary: 'Журнал распаковки оформлен в едином тёмном стиле с журналом авто-деплоя, добавлены ротация _history, бережная обработка занятых файлов и опциональный запуск .exe.',
+      changes: [
+        'Добавлен журнал распаковки в стиле консоли авто-деплоя (0xFF141A26, Consolas, кнопка «Очистить») и статус последней проверки GitHub',
+        'Добавлена ротация копий в _history (buildHistoryKeepCount) и бережная обработка занятых файлов при распаковке',
+        'Добавлен опциональный автозапуск найденного .exe после обновления папки current (buildAutoLaunchExe)',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.40',
       buildNumber: 40,
@@ -84,28 +106,6 @@ class AppVersion {
       changes: [
         'Удалён лишний закрывающий ); на строке 120 в lib/models/app_settings.dart',
         'Добавлен импорт dart:async, const для Shortcuts и корректный запуск асинхронного выхода в lib/screens/home_screen.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.34',
-      buildNumber: 34,
-      title: 'Синхронизация вкладок, фоновый опрос сборок для всех проектов и бережный выход',
-      summary: 'Синхронизирован контроллер вкладок с меню, добавлен фоновый опрос сборок GitHub по всем активным проектам, добавлены статусы в меню и бережное сохранение состояния при выходе.',
-      changes: [
-        'Связаны TabController и provider.selectedTabIndex для мгновенного переключения вкладок из меню',
-        'Расширен фоновый опрос сборок GitHub на все проекты с включённой автопроверкой',
-        'Добавлены статусы проекта и автосборок в меню и бережное сохранение состояния окна/таймеров при выходе и Ctrl+Q',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.33',
-      buildNumber: 33,
-      title: 'Исправлены ошибки анализатора в main.dart, project_provider.dart и github_build_fetcher_service.dart',
-      summary: 'Устранён порядок объявления windowSizeListener в main.dart, удалён дубликат clearDeployLogs в project_provider.dart и добавлен прямой импорт dart:typed_data.',
-      changes: [
-        'Исправлен порядок объявления windowSizeListener перед AppWindowCloseListener в lib/main.dart',
-        'Удалено повторное объявление clearDeployLogs в lib/providers/project_provider.dart',
-        'Добавлен импорт dart:typed_data для BytesBuilder в lib/services/github_build_fetcher_service.dart',
       ],
     ),
   ];
