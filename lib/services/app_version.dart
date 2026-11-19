@@ -17,11 +17,23 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.69';
-  static const int currentBuildNumber = 69;
+  static const String currentVersion = '2.1.70';
+  static const int currentBuildNumber = 70;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.70',
+      buildNumber: 70,
+      title: 'Исправлены ошибки flutter analyze в home_screen.dart, app_storage.dart и auto_deploy_tab.dart',
+      summary: 'Устранены ошибки и предупреждения анализатора (unterminated_string_literal, undefined_method, unused_local_variable, unused_element) после объединения журналов и добавления перемещения проектов.',
+      changes: [
+        'В home_screen.dart исправлено экранирование переноса строки в logs.join',
+        'В app_storage.dart в saveProjectOrder использован saveSettings вместо несуществующего _updateSettings',
+        'В auto_deploy_tab.dart удалён неиспользуемый параметр trailing у _CardSection',
+        'Обновлена версия до 2.1.70+70 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.69',
       buildNumber: 69,
@@ -96,16 +108,6 @@ class AppVersion {
       changes: [
         'Заменено [branch] на [branch] в константном списке history в lib/services/app_version.dart',
         'Обновлена версия до 2.1.63+63 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.62',
-      buildNumber: 62,
-      title: 'Убраны лишние фигурные скобки в строковой интерполяции github_build_fetcher_service.dart',
-      summary: 'Исправлено замечание анализатора unnecessary_brace_in_string_interps на строке 43 в lib/services/github_build_fetcher_service.dart.',
-      changes: [
-        'Заменено [branch] на [branch] в lib/services/github_build_fetcher_service.dart',
-        'Обновлена версия до 2.1.62+62 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];

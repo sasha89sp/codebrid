@@ -333,12 +333,10 @@ class _CardSection extends StatelessWidget {
   const _CardSection({
     required this.title,
     required this.child,
-    this.trailing,
   });
 
   final String title;
   final Widget child;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -364,7 +362,6 @@ class _CardSection extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) trailing!,
             ],
           ),
           const SizedBox(height: 12),

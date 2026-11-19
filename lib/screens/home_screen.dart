@@ -1185,8 +1185,7 @@ class _PinnedUnifiedLogDockState extends State<_PinnedUnifiedLogDock> {
                     )
                   : SingleChildScrollView(
                       child: SelectableText(
-                        logs.join('
-'),
+                        logs.join('\n'),
                         style: const TextStyle(
                           fontFamily: 'Consolas',
                           fontSize: 12,

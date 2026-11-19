@@ -369,7 +369,7 @@ class AppStorage {
 
   Future<void> saveProjectOrder(List<String> orderedIds) async {
     final current = await loadSettings();
-    await _updateSettings(_ => current.copyWith(projectOrder: orderedIds));
+    await saveSettings(current.copyWith(projectOrder: orderedIds));
   }
 
   Future<void> saveLastProject(String? projectId) async {
