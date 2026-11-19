@@ -17,6 +17,7 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
   final TextEditingController _targetDirController = TextEditingController();
   final TextEditingController _filterController = TextEditingController();
   final TextEditingController _preservedController = TextEditingController();
+  final TextEditingController _tokenController = TextEditingController();
 
   String? _loadedProjectId;
   bool _buildCaptureEnabled = false;
@@ -28,6 +29,8 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
   int _buildAutoFetchIntervalMinutes = 5;
   late bool _buildAutoLaunchExe;
   late int _buildHistoryKeepCount;
+  bool _obscureToken = true;
+  bool _tokenInitialized = false;
   String? _shownPendingZipPath;
 
   @override
@@ -42,6 +45,7 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
     _targetDirController.dispose();
     _filterController.dispose();
     _preservedController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
@@ -63,6 +67,13 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
   }
 
   Future<void> _saveSettings(ProjectProvider provider) async {
+    final trimmedToken = _tokenController.text.trim();
+    if (trimmedToken != provider.githubToken) {
+      await provider.saveGitHubCredentials(
+        token: trimmedToken,
+        owner: provider.githubOwner,
+      );
+    }
     await provider.updateCurrentProjectBuildSettings(
       buildCaptureEnabled: _buildCaptureEnabled,
       buildAskTargetBeforeExtract: _buildAskTargetBeforeExtract,
@@ -212,6 +223,10 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
       return const Center(child: Text('Выберите проект'));
     }
     _syncFromProject(project);
+    if (!_tokenInitialized) {
+      _tokenInitialized = true;
+      _tokenController.text = provider.githubToken;
+    }
     _maybeShowPendingDialog(context, provider);
 
     return SingleChildScrollView(
@@ -360,6 +375,23 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                   ],
                 ),
                 const SizedBox(height: 14),
+                TextField(
+                  controller: _tokenController,
+                  obscureText: _obscureToken,
+                  decoration: InputDecoration(
+                    labelText: 'GitHub Token (нужен для скачивания артефактов GitHub Actions)',
+                    hintText: 'ghp_... или github_pat_...',
+                    suffixIcon: IconButton(
+                      tooltip: _obscureToken ? 'Показать токен' : 'Скрыть токен',
+                      icon: Icon(
+                        _obscureToken ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        size: 19,
+                      ),
+                      onPressed: () => setState(() => _obscureToken = !_obscureToken),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Автопроверка и автоскачивание сборок с GitHub после компиляции'),
@@ -402,7 +434,16 @@ class _BuildCaptureTabState extends State<BuildCaptureTab> {
                     OutlinedButton.icon(
                       onPressed: provider.isCheckingGitHubBuilds
                           ? null
-                          : () => provider.checkAndApplyGitHubBuilds(silent: false),
+                          : () async {
+                              final trimmedToken = _tokenController.text.trim();
+                              if (trimmedToken != provider.githubToken) {
+                                await provider.saveGitHubCredentials(
+                                  token: trimmedToken,
+                                  owner: provider.githubOwner,
+                                );
+                              }
+                              await provider.checkAndApplyGitHubBuilds(silent: false);
+                            },
                       icon: const Icon(Icons.cloud_download_outlined, size: 18),
                       label: Text(
                         provider.isCheckingGitHubBuilds

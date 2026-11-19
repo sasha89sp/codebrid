@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.50+50
+- Добавлено поле ввода **GitHub Token** (с кнопкой показа/скрытия и сохранением в `AppSettings`) прямо во вкладке «Распаковка сборок», чтобы скачивать артефакты GitHub Actions без повторного создания проекта.
+
 ## 2.1.49+49
 - Исправлена блокировка ввода с клавиатуры в полях диалогов и редакторе шаблонов: убран ручной перехват `WM_NCCALCSIZE`/`WM_NCHITTEST` в `windows/runner/flutter_window.cpp`, включён `TitleBarStyle.hidden` и управление окном через `window_manager` в `MacOsWindowTitleBar`.
 

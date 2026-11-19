@@ -1,17 +1,15 @@
 status: ready_for_verification
-current_stage: "Релиз 2.1.49: исправлен клавиатурный ввод и фокус в полях диалогов и шаблонов"
+current_stage: "Релиз 2.1.50: поле ввода GitHub Token во вкладке «Распаковка сборок»"
 
 completed:
-  - "Убран ручной перехват WM_NCCALCSIZE/WM_NCHITTEST из windows/runner/flutter_window.cpp"
-  - "Включён TitleBarStyle.hidden и управление окном через window_manager в MacOsWindowTitleBar"
-  - "Улучшено получение фокуса по клику в TemplateManagerDialog"
-  - "Обновлена версия до 2.1.49+49 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
+  - "Добавлено поле ввода GitHub Token с показом/скрытием и сохранением в AppSettings в BuildCaptureTab"
+  - "Обновлена версия до 2.1.50+50 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml"
 
 verified:
   - "Локальный flutter analyze в этом контейнере не запускался"
 
 pending:
-  - "Проверить Build portable Windows x64 на GitHub Actions и ввод текста в полях шаблона и остальных диалогах"
+  - "Проверить Build portable Windows x64 на GitHub Actions и скачивание артефактов Actions с токеном"
 
 next_step: >
-  Залить архив 2.1.49 в репозиторий и проверить сборку Windows на GitHub.
+  Залить архив 2.1.50 в репозиторий, собрать на GitHub и проверить скачивание артефакта по токену.
