@@ -355,6 +355,8 @@ class ProjectProvider extends ChangeNotifier {
     required String buildZipFilter,
     required String buildPreservedFiles,
     bool buildTakeAllPublicBuilds = true,
+    bool buildOverlayPrevious = true,
+    bool buildClearBeforeApply = false,
   }) async {
     final project = currentProject;
     if (project == null) return;
@@ -365,6 +367,8 @@ class ProjectProvider extends ChangeNotifier {
       buildZipFilter: buildZipFilter.trim(),
       buildPreservedFiles: buildPreservedFiles.trim(),
       buildTakeAllPublicBuilds: buildTakeAllPublicBuilds,
+      buildOverlayPrevious: buildOverlayPrevious,
+      buildClearBeforeApply: buildClearBeforeApply,
     );
     await storage.updateProject(updated);
     currentProject = updated;
@@ -425,6 +429,8 @@ class ProjectProvider extends ChangeNotifier {
         buildsRootDirectory: buildsRoot,
         customTargetDirectory: customTargetDirectory,
         preservedPatterns: preserved,
+        overlayPreviousVersion: project.buildOverlayPrevious,
+        clearTargetBeforeApply: project.buildClearBeforeApply,
       );
 
       for (final line in result.logs) {

@@ -26,6 +26,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _buildCaptureEnabled = false;
   bool _buildAskTargetBeforeExtract = false;
   bool _buildTakeAllPublicBuilds = true;
+  bool _buildOverlayPrevious = true;
+  bool _buildClearBeforeApply = false;
   final TextEditingController _buildTargetDirController = TextEditingController();
   final TextEditingController _buildFilterController = TextEditingController();
   final TextEditingController _buildPreservedController = TextEditingController();
@@ -58,6 +60,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       _buildCaptureEnabled = project.buildCaptureEnabled;
       _buildAskTargetBeforeExtract = project.buildAskTargetBeforeExtract;
       _buildTakeAllPublicBuilds = project.buildTakeAllPublicBuilds;
+      _buildOverlayPrevious = project.buildOverlayPrevious;
+      _buildClearBeforeApply = project.buildClearBeforeApply;
       _buildTargetDirController.text = project.buildTargetDirectory;
       _buildFilterController.text = project.buildZipFilter;
       _buildPreservedController.text = project.buildPreservedFiles;
@@ -108,6 +112,8 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
       buildZipFilter: _buildFilterController.text,
       buildPreservedFiles: _buildPreservedController.text,
       buildTakeAllPublicBuilds: _buildTakeAllPublicBuilds,
+      buildOverlayPrevious: _buildOverlayPrevious,
+      buildClearBeforeApply: _buildClearBeforeApply,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -344,6 +350,22 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
                   value: _buildTakeAllPublicBuilds,
                   onChanged: (bool? value) =>
                       setState(() => _buildTakeAllPublicBuilds = value ?? true),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Сохранять оверлей старой версии поверх (перенос настроек и файлов)'),
+                  value: _buildOverlayPrevious,
+                  onChanged: (bool? value) =>
+                      setState(() => _buildOverlayPrevious = value ?? true),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Очищать перед сборкой (собирать current только из нового архива)'),
+                  value: _buildClearBeforeApply,
+                  onChanged: (bool? value) =>
+                      setState(() => _buildClearBeforeApply = value ?? false),
                 ),
                 const SizedBox(height: 8),
                 Row(

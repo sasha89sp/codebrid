@@ -29,6 +29,8 @@ class BuildBundleService {
     required String buildsRootDirectory,
     String? customTargetDirectory,
     List<String> preservedPatterns = const <String>[],
+    bool overlayPreviousVersion = true,
+    bool clearTargetBeforeApply = false,
   }) async {
     final logs = <String>[];
     final zipFile = File(zipPath);
@@ -76,9 +78,14 @@ class BuildBundleService {
       backupPath = backupDir.path;
       logs.add('Старая версия сохранена в исходном виде: $backupPath');
 
-      // Копируем старую версию в staging, чтобы перенести настройки и файлы,
-      // а поверх неё накатываем новый архив.
-      await _copyDirectoryContents(backupDir, stagingDir);
+      if (clearTargetBeforeApply) {
+        logs.add('Включена очистка перед сборкой — база старой версии не подмешивается в staging.');
+      } else if (overlayPreviousVersion) {
+        await _copyDirectoryContents(backupDir, stagingDir);
+        logs.add('Старая версия подмешана в staging как основа для переноса настроек (оверлей включён).');
+      } else {
+        logs.add('Оверлей старой версии отключён — собирается только содержимое нового архива.');
+      }
     } else {
       logs.add('Предыдущая версия в папке current отсутствует — создаётся первая сборка.');
     }
@@ -110,7 +117,7 @@ class BuildBundleService {
       for (final item in fileEntries) {
         final relPath = _stripPrefix(item.path, rootPrefix);
         if (relPath.isEmpty) continue;
-        if (hasExistingCurrent && _matchesPreserved(relPath, preservedPatterns)) {
+        if (hasExistingCurrent && overlayPreviousVersion && !clearTargetBeforeApply && _matchesPreserved(relPath, preservedPatterns)) {
           logs.add('Сохранён защищённый файл старой версии: $relPath');
           continue;
         }

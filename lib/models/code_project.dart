@@ -21,6 +21,8 @@ class CodeProject {
     this.buildZipFilter = '',
     this.buildPreservedFiles = '',
     this.buildTakeAllPublicBuilds = true,
+    this.buildOverlayPrevious = true,
+    this.buildClearBeforeApply = false,
   });
 
   /// Уникальное имя каталога внутри data/projects.
@@ -51,6 +53,8 @@ class CodeProject {
   final String buildZipFilter;
   final String buildPreservedFiles;
   final bool buildTakeAllPublicBuilds;
+  final bool buildOverlayPrevious;
+  final bool buildClearBeforeApply;
 
   CodeProject copyWith({
     String? name,
@@ -71,6 +75,8 @@ class CodeProject {
     String? buildZipFilter,
     String? buildPreservedFiles,
     bool? buildTakeAllPublicBuilds,
+    bool? buildOverlayPrevious,
+    bool? buildClearBeforeApply,
   }) {
     return CodeProject(
       id: id,
@@ -94,6 +100,8 @@ class CodeProject {
       buildZipFilter: buildZipFilter ?? this.buildZipFilter,
       buildPreservedFiles: buildPreservedFiles ?? this.buildPreservedFiles,
       buildTakeAllPublicBuilds: buildTakeAllPublicBuilds ?? this.buildTakeAllPublicBuilds,
+      buildOverlayPrevious: buildOverlayPrevious ?? this.buildOverlayPrevious,
+      buildClearBeforeApply: buildClearBeforeApply ?? this.buildClearBeforeApply,
     );
   }
 
@@ -119,6 +127,8 @@ class CodeProject {
         'buildZipFilter': buildZipFilter,
         'buildPreservedFiles': buildPreservedFiles,
         'buildTakeAllPublicBuilds': buildTakeAllPublicBuilds,
+        'buildOverlayPrevious': buildOverlayPrevious,
+        'buildClearBeforeApply': buildClearBeforeApply,
       };
 
   factory CodeProject.fromJson(
@@ -151,6 +161,8 @@ class CodeProject {
       buildZipFilter: json['buildZipFilter']?.toString() ?? '',
       buildPreservedFiles: json['buildPreservedFiles']?.toString() ?? '',
       buildTakeAllPublicBuilds: json['buildTakeAllPublicBuilds'] != false,
+      buildOverlayPrevious: json['buildOverlayPrevious'] != false,
+      buildClearBeforeApply: json['buildClearBeforeApply'] == true,
     );
   }
 
