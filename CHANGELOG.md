@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.21+21
+- Устранены подсказки `prefer_const_constructors` и `prefer_const_literals_to_create_immutables` в диалоге «О программе» (`lib/screens/home_screen.dart`).
+
 ## 2.1.20+20
 - Исправлена ошибка `argument_type_not_assignable` при вызове `_findProject` с `String?` в `lib/providers/project_provider.dart` и подсказки `prefer_const` в `lib/screens/home_screen.dart`.
 

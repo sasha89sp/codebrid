@@ -17,11 +17,20 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.20';
-  static const int currentBuildNumber = 20;
+  static const String currentVersion = '2.1.21';
+  static const int currentBuildNumber = 21;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.21',
+      buildNumber: 21,
+      title: 'Устранены подсказки prefer_const в диалоге «О программе»',
+      summary: 'Перенесён модификатор const на уровень Row и Text в _showAboutDialog в lib/screens/home_screen.dart.',
+      changes: [
+        'Исправлены подсказки prefer_const_constructors и prefer_const_literals_to_create_immutables в lib/screens/home_screen.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.20',
       buildNumber: 20,

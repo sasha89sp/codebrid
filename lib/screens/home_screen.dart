@@ -1891,7 +1891,7 @@ Future<void> _showAboutDialog(BuildContext context, ProjectProvider provider) as
               : backupDirCtrl.text.trim();
 
           return AlertDialog(
-            title: Row(
+            title: const Row(
               children: [
                 const Icon(Icons.info_outline_rounded, size: 22),
                 const SizedBox(width: 8),
@@ -1904,10 +1904,10 @@ Future<void> _showAboutDialog(BuildContext context, ProjectProvider provider) as
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
+                  const Text(
                     'Актуальная версия: ${AppVersion.currentVersion} (сборка ${AppVersion.currentBuildNumber}). '
                     'Сохранение настроек, шаблонов, проектов и наработок.',
-                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF5C687D)),
+                    style: TextStyle(fontSize: 12.5, color: Color(0xFF5C687D)),
                   ),
                   const SizedBox(height: 10),
                   Container(
