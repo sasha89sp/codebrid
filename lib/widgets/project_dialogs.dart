@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 import '../models/code_project.dart';
 import '../providers/project_provider.dart';
-import '../services/agent_template.dart';
 
 Future<void> showRenameProjectDialog(
   BuildContext context,

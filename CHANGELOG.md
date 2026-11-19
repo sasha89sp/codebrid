@@ -1,5 +1,8 @@
 # История изменений CodeBridge Mini
 
+## 2.1.39+39
+- Восстановлены методы и геттеры `ProjectProvider` (`deployZipArchive`, `zipVersionsDirectoryFor`, `checkCurrentProjectGit`, `clearDeployLogs`, `applyBuildArchive`, `dismissPendingBuild`, `confirmPendingBuild`, `checkAndApplyGitHubBuilds`, `prepareForGracefulExit`), добавлен `dart:convert` и `super.key` в `files_to_prompt_dialog.dart` и убраны неиспользуемые элементы анализатора.
+
 ## 2.1.38+38
 - Вынесены диалоги проектов в `lib/widgets/project_dialogs.dart`, диалог настроек и бэкапов в `lib/widgets/about_backup_dialog.dart`, а управление бэкапами выделено в `BackupCoordinator` (`lib/services/backup_coordinator_service.dart`).
 

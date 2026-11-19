@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.38';
-  static const int currentBuildNumber = 38;
+  static const String currentVersion = '2.1.39';
+  static const int currentBuildNumber = 39;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.39',
+      buildNumber: 39,
+      title: 'Восстановлены методы деплоя/сборок в ProjectProvider и убраны замечания анализатора',
+      summary: 'Восстановлены методы deployZipArchive, applyBuildArchive, checkAndApplyGitHubBuilds, prepareForGracefulExit и другие в ProjectProvider, добавлен utf8 и super.key, удалены неиспользуемые импорты и функции.',
+      changes: [
+        'Восстановлены методы и геттеры деплоя, перехвата сборок, опроса GitHub и корректного выхода в ProjectProvider',
+        'Добавлен импорт dart:convert (utf8) и параметр super.key в FilesToPromptDialog',
+        'Удалены неиспользуемые функции и импорт в about_backup_dialog.dart, files_to_prompt_dialog.dart и project_dialogs.dart',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.38',
       buildNumber: 38,
@@ -95,16 +106,6 @@ class AppVersion {
         'Добавлены горячие клавиши Ctrl+N, Ctrl+, и Ctrl+Q и синхронизация переключения вкладок из меню',
         'Сохраняется lastFetchedBuildSources в settings.json и учитывается buildZipFilter / buildTakeAllPublicBuilds при скачивании с GitHub',
         'Обновлён тултип трея на актуальную версию AppVersion и добавлена кнопка «Папка версий ZIP» во вкладку «Авто-деплой»',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.31',
-      buildNumber: 31,
-      title: 'Восстановлены методы ProjectProvider и исправлены ошибки анализатора в compact_app_menu.dart',
-      summary: 'Восстановлены все методы ProjectProvider и исправлены синтаксические/анализаторные ошибки в lib/widgets/compact_app_menu.dart.',
-      changes: [
-        'Восстановлены checkCurrentProjectGit, clearDeployLogs, dismissPendingBuild, confirmPendingBuild, createBackupNow, updateBackupSettings и restoreBackup в ProjectProvider',
-        'Исправлены кавычки, неиспользуемые поля и переключение максимизации/полного экрана через window_manager в compact_app_menu.dart',
       ],
     ),
   ];

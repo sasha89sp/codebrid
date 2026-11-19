@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -15,7 +17,7 @@ Future<void> showFilesToPromptDialog(BuildContext context) async {
 }
 
 class FilesToPromptDialog extends StatefulWidget {
-  const FilesToPromptDialog();
+  const FilesToPromptDialog({super.key});
 
   @override
   State<FilesToPromptDialog> createState() => FilesToPromptDialogState();
@@ -183,25 +185,5 @@ class FilesToPromptDialogState extends State<FilesToPromptDialog> {
   }
 }
 
-void _showDialogSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-  );
-}
 
-String _formatShortDate(DateTime date) {
-  final local = date.toLocal();
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(local.day)}.${two(local.month)}.${local.year}';
-}
 
-String _formatFileSize(File file) {
-  try {
-    final bytes = file.lengthSync();
-    if (bytes < 1024) return '$bytes Б';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} КБ';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} МБ';
-  } catch (_) {
-    return 'Размер неизвестен';
-  }
-}

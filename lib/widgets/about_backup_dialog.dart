@@ -270,13 +270,3 @@ String _formatAboutDate(DateTime date) {
   return '${two(local.day)}.${two(local.month)}.${local.year}';
 }
 
-String _formatAboutFileSize(File file) {
-  try {
-    final bytes = file.lengthSync();
-    if (bytes < 1024) return '$bytes Б';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} КБ';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} МБ';
-  } catch (_) {
-    return 'Размер неизвестен';
-  }
-}
