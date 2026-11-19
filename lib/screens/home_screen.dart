@@ -14,7 +14,6 @@ import '../providers/project_provider.dart';
 import '../services/build_bundle_service.dart';
 import '../services/files_to_prompt.dart';
 import '../widgets/auto_deploy_tab.dart';
-import '../widgets/build_capture_tab.dart';
 import '../widgets/section_header.dart';
 
 Future<void> _openFolder(BuildContext context, String folderPath) async {
@@ -570,15 +569,14 @@ class _AgentTabState extends State<_AgentTab> {
   Future<void> _saveManualAgent(BuildContext context, ProjectProvider provider) async {
     try {
       await provider.saveAgentContent(_agentController.text);
+      if (!mounted) return;
       _lastSyncedContent = provider.agentContent;
-      if (mounted) {
-        setState(() => _hasDirtyChanges = false);
-        _showSnack(context, 'Изменения в agent.md сохранены.');
-      }
+      setState(() => _hasDirtyChanges = false);
+      if (!context.mounted) return;
+      _showSnack(context, 'Изменения в agent.md сохранены.');
     } catch (error) {
-      if (context.mounted) {
-        _showSnack(context, 'Не удалось сохранить agent.md: $error');
-      }
+      if (!mounted || !context.mounted) return;
+      _showSnack(context, 'Не удалось сохранить agent.md: $error');
     }
   }
 

@@ -24,7 +24,6 @@ class _AutoDeployTabState extends State<AutoDeployTab> {
   bool _deleteZipAfterDeploy = false;
   bool _cleanBeforeExtract = false;
   bool _autoSyncOnReject = true;
-  String? _shownPendingZipPath;
 
   @override
   void dispose() {
