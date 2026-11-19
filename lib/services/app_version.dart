@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.50';
-  static const int currentBuildNumber = 50;
+  static const String currentVersion = '2.1.51';
+  static const int currentBuildNumber = 51;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.51',
+      buildNumber: 51,
+      title: 'Полноэкранный редактор библиотеки шаблонов с рабочим вводом текста',
+      summary: 'Библиотека шаблонов AGENT.md открывается как полноценный экран Scaffold (MaterialPageRoute) без модального Dialog-слоя, который блокировал ввод текста на Windows.',
+      changes: [
+        'Переведена библиотека шаблонов из модального Dialog на полноценный Scaffold-экран (TemplateManagerScreen)',
+        'Убран ручной перехват фокуса в onTap у TextField, чтобы ввод текста, курсор и выделение работали так же, как в основном редакторе инструкции',
+        'Обновлена версия до 2.1.51+51 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.50',
       buildNumber: 50,
@@ -96,17 +107,6 @@ class AppVersion {
         'Оформлены вспомогательные методы BuildBundleService в расширение без лишнего static и удалён неиспользуемый _clearDirectory',
         'Добавлены поля _buildAutoLaunchExe и _buildHistoryKeepCount и исправлена структура Column для журнала распаковки в build_capture_tab.dart',
         'Удалён неиспользуемый импорт agent_template_item.dart в home_screen.dart',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.43',
-      buildNumber: 43,
-      title: 'Исправлена ручная проверка и скачивание сборок с GitHub',
-      summary: 'При ручном нажатии «Проверить и скачать с GitHub» добавлен forceRecheck, перебор последних успешных run и подробное логирование причин, если сборка не найдена или не задан URL/токен.',
-      changes: [
-        'Добавлен флаг forceRecheck при ручной проверке сборок с GitHub',
-        'Добавлен перебор последних успешных workflow runs и проверка просроченных/пустых артефактов',
-        'Добавлены понятные сообщения и записи в журнал при пустом URL, отсутствии токена или уже обработанной сборке',
       ],
     ),
   ];
