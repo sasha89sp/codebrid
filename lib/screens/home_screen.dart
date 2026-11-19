@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../models/agent_template_item.dart';
 import '../models/code_project.dart';
 import '../models/generated_file.dart';
 import '../providers/project_provider.dart';
@@ -22,7 +23,6 @@ import '../widgets/project_dialogs.dart';
 import '../widgets/home_shortcuts.dart';
 import '../widgets/macos_window_title_bar.dart';
 import '../widgets/section_header.dart';
-import '../widgets/template_manager_dialog.dart';
 
 Future<void> openFolderInExplorer(BuildContext context, String folderPath) async {
   try {
@@ -591,13 +591,26 @@ class _AgentTab extends StatefulWidget {
 
 class _AgentTabState extends State<_AgentTab> {
   final TextEditingController _agentController = TextEditingController();
+  final TextEditingController _templateNameController = TextEditingController();
+  final TextEditingController _templateContentController = TextEditingController();
+
   String? _loadedProjectId;
   String _lastSyncedContent = '';
   bool _hasDirtyChanges = false;
 
+  bool _isManagingTemplates = false;
+  String? _editingTemplateId;
+  bool _isDraftNewTemplate = false;
+  bool _templateDirty = false;
+  bool _savingTemplate = false;
+  String _templateStatusMessage = '';
+  bool _templateStatusIsError = false;
+
   @override
   void dispose() {
     _agentController.dispose();
+    _templateNameController.dispose();
+    _templateContentController.dispose();
     super.dispose();
   }
 
@@ -619,6 +632,185 @@ class _AgentTabState extends State<_AgentTab> {
       );
     } else if (externalChanged && _hasDirtyChanges) {
       _lastSyncedContent = incoming;
+    }
+  }
+
+  void _openInlineTemplateEditor(ProjectProvider provider, {bool startWithNew = false}) {
+    final list = provider.templates;
+    setState(() {
+      _isManagingTemplates = true;
+      _templateStatusMessage = '';
+      _templateStatusIsError = false;
+    });
+    if (startWithNew) {
+      _createNewDraftTemplate();
+      return;
+    }
+    final initialId = (_editingTemplateId != null && list.any((t) => t.id == _editingTemplateId))
+        ? _editingTemplateId!
+        : (list.any((t) => t.id == provider.selectedTemplateId)
+            ? provider.selectedTemplateId
+            : (list.isNotEmpty ? list.first.id : null));
+    if (initialId != null) {
+      _selectExistingTemplate(provider, initialId);
+    } else {
+      _createNewDraftTemplate();
+    }
+  }
+
+  void _selectExistingTemplate(ProjectProvider provider, String id) {
+    final matches = provider.templates.where((t) => t.id == id).toList();
+    if (matches.isEmpty) return;
+    final item = matches.first;
+    setState(() {
+      _editingTemplateId = item.id;
+      _isDraftNewTemplate = false;
+      _templateDirty = false;
+      _templateStatusMessage = '';
+      _templateStatusIsError = false;
+      _templateNameController.text = item.name;
+      _templateContentController.text = item.content;
+    });
+  }
+
+  void _createNewDraftTemplate() {
+    final newId = 'custom_${DateTime.now().microsecondsSinceEpoch}';
+    const starterContent =
+        '# Инструкция для {{project_name}}\n\n'
+        'Описание задачи:\n'
+        '{{project_description}}\n\n'
+        '## Формат файлов\n'
+        'Для каждого файла используй:\n\n'
+        '<<<FILE: relative/path>>>\n'
+        'полное содержимое\n'
+        '<<<END>>>\n\n'
+        '<<<END_PROJECT>>>\n';
+    setState(() {
+      _isManagingTemplates = true;
+      _editingTemplateId = newId;
+      _isDraftNewTemplate = true;
+      _templateDirty = true;
+      _templateStatusMessage = '';
+      _templateStatusIsError = false;
+      _templateNameController.text = 'Новый шаблон';
+      _templateContentController.text = starterContent;
+    });
+  }
+
+  Future<void> _duplicateCurrentTemplate(ProjectProvider provider) async {
+    final baseName = _templateNameController.text.trim().isEmpty
+        ? 'Шаблон'
+        : _templateNameController.text.trim();
+    final copyId = 'custom_${DateTime.now().microsecondsSinceEpoch}';
+    setState(() {
+      _editingTemplateId = copyId;
+      _isDraftNewTemplate = true;
+      _templateDirty = true;
+      _templateNameController.text = '$baseName — копия';
+    });
+    await _saveCurrentTemplate(provider);
+  }
+
+  Future<void> _saveCurrentTemplate(ProjectProvider provider) async {
+    final id = _editingTemplateId;
+    if (id == null) return;
+    final cleanName = _templateNameController.text.trim();
+    if (cleanName.isEmpty) {
+      setState(() {
+        _templateStatusMessage = 'Введите название шаблона.';
+        _templateStatusIsError = true;
+      });
+      return;
+    }
+    setState(() {
+      _savingTemplate = true;
+      _templateStatusMessage = '';
+      _templateStatusIsError = false;
+    });
+    try {
+      final existing = provider.templates.where((t) => t.id == id).toList();
+      final item = existing.isNotEmpty
+          ? existing.first.copyWith(
+              name: cleanName,
+              content: _templateContentController.text,
+            )
+          : AgentTemplateItem(
+              id: id,
+              name: cleanName,
+              content: _templateContentController.text,
+              isBuiltIn: false,
+            );
+      await provider.saveTemplate(item);
+      if (!mounted) return;
+      setState(() {
+        _editingTemplateId = item.id;
+        _isDraftNewTemplate = false;
+        _templateDirty = false;
+        _templateStatusMessage = 'Шаблон «${item.name}» сохранён.';
+        _templateStatusIsError = false;
+      });
+      _showSnack(context, 'Шаблон «${item.name}» сохранён.');
+    } catch (error) {
+      if (!mounted) return;
+      final msg = 'Не удалось сохранить шаблон: $error';
+      setState(() {
+        _templateStatusMessage = msg;
+        _templateStatusIsError = true;
+      });
+      _showSnack(context, msg);
+    } finally {
+      if (mounted) {
+        setState(() => _savingTemplate = false);
+      }
+    }
+  }
+
+  Future<void> _deleteCurrentTemplate(ProjectProvider provider) async {
+    final id = _editingTemplateId;
+    if (id == null) return;
+    if (_isDraftNewTemplate) {
+      final fallback = provider.templates.isNotEmpty ? provider.templates.first.id : null;
+      if (fallback != null) {
+        _selectExistingTemplate(provider, fallback);
+      } else {
+        setState(() {
+          _editingTemplateId = null;
+          _isDraftNewTemplate = false;
+          _templateNameController.clear();
+          _templateContentController.clear();
+        });
+      }
+      return;
+    }
+    final existing = provider.templates.where((t) => t.id == id).toList();
+    if (existing.isEmpty) return;
+    if (existing.first.isBuiltIn) {
+      setState(() {
+        _templateStatusMessage = 'Встроенный шаблон нельзя удалить. Его можно редактировать или копировать.';
+        _templateStatusIsError = true;
+      });
+      return;
+    }
+    try {
+      await provider.deleteTemplate(id);
+      if (!mounted) return;
+      final nextId = provider.templates.isNotEmpty ? provider.templates.first.id : null;
+      if (nextId != null) {
+        _selectExistingTemplate(provider, nextId);
+      } else {
+        setState(() {
+          _editingTemplateId = null;
+          _templateNameController.clear();
+          _templateContentController.clear();
+        });
+      }
+      _showSnack(context, 'Шаблон удалён.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _templateStatusMessage = '$error';
+        _templateStatusIsError = true;
+      });
     }
   }
 
@@ -644,6 +836,10 @@ class _AgentTabState extends State<_AgentTab> {
     final selectedId = availableTemplates.any((item) => item.id == provider.selectedTemplateId)
         ? provider.selectedTemplateId
         : (availableTemplates.isEmpty ? null : availableTemplates.first.id);
+
+    if (_isManagingTemplates) {
+      return _buildInlineTemplateEditor(context, provider, availableTemplates);
+    }
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -676,9 +872,14 @@ class _AgentTabState extends State<_AgentTab> {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: () => showTemplateManagerDialog(context, provider),
+                onPressed: () => _openInlineTemplateEditor(provider, startWithNew: false),
                 icon: const Icon(Icons.tune_rounded, size: 17),
                 label: const Text('Управление шаблонами'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _openInlineTemplateEditor(provider, startWithNew: true),
+                icon: const Icon(Icons.add_rounded, size: 17),
+                label: const Text('Новый шаблон'),
               ),
               OutlinedButton.icon(
                 onPressed: provider.isWorking ? null : () async {
@@ -748,7 +949,232 @@ class _AgentTabState extends State<_AgentTab> {
       ),
     );
   }
+
+  Widget _buildInlineTemplateEditor(
+    BuildContext context,
+    ProjectProvider provider,
+    List<AgentTemplateItem> availableTemplates,
+  ) {
+    final existingMatches = availableTemplates.where((t) => t.id == _editingTemplateId).toList();
+    final currentTemplate = existingMatches.isNotEmpty ? existingMatches.first : null;
+    final canDelete = _editingTemplateId != null &&
+        (_isDraftNewTemplate || (currentTemplate != null && !currentTemplate.isBuiltIn));
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _isManagingTemplates = false),
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: const Text('К инструкции проекта'),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Библиотека и редактор шаблонов AGENT.md',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF172033)),
+                ),
+              ),
+              FilledButton.icon(
+                onPressed: _savingTemplate ? null : _createNewDraftTemplate,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Новый шаблон'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: (_editingTemplateId == null || _savingTemplate)
+                    ? null
+                    : () => _duplicateCurrentTemplate(provider),
+                icon: const Icon(Icons.copy_rounded, size: 17),
+                label: const Text('Копировать'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 245,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE4E9F2)),
+                    ),
+                    child: ListView(
+                      children: [
+                        if (_isDraftNewTemplate && _editingTemplateId != null)
+                          ListTile(
+                            dense: true,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            selected: true,
+                            selectedTileColor: const Color(0xFFEEF1FF),
+                            leading: const Icon(Icons.edit_note_rounded, size: 19),
+                            title: Text(
+                              _templateNameController.text.trim().isEmpty
+                                  ? 'Новый шаблон'
+                                  : _templateNameController.text.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: const Text('Черновик', style: TextStyle(fontSize: 11)),
+                          ),
+                        ...availableTemplates.map((item) {
+                          final isSelected = !_isDraftNewTemplate && item.id == _editingTemplateId;
+                          return ListTile(
+                            dense: true,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            selected: isSelected,
+                            selectedTileColor: const Color(0xFFEEF1FF),
+                            leading: Icon(
+                              item.isBuiltIn ? Icons.verified_outlined : Icons.description_outlined,
+                              size: 18,
+                            ),
+                            title: Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            onTap: () => _selectExistingTemplate(provider, item.id),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Название шаблона',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+                            ),
+                          ),
+                          if (_isDraftNewTemplate)
+                            const Text(
+                              'Новый шаблон — отредактируйте и нажмите «Сохранить шаблон»',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFF4F5D75)),
+                            )
+                          else if (currentTemplate?.isBuiltIn == true)
+                            const Text(
+                              'Встроенный шаблон',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFF6B778C)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _templateNameController,
+                        enabled: _editingTemplateId != null && !_savingTemplate,
+                        readOnly: false,
+                        maxLines: 1,
+                        onChanged: (_) {
+                          setState(() {
+                            _templateDirty = true;
+                            _templateStatusMessage = '';
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          hintText: 'Введите название шаблона...',
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Текст инструкции Markdown',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: TextField(
+                          controller: _templateContentController,
+                          enabled: _editingTemplateId != null && !_savingTemplate,
+                          readOnly: false,
+                          expands: true,
+                          minLines: null,
+                          maxLines: null,
+                          textAlignVertical: TextAlignVertical.top,
+                          onChanged: (_) {
+                            if (!_templateDirty || _templateStatusMessage.isNotEmpty) {
+                              setState(() {
+                                _templateDirty = true;
+                                _templateStatusMessage = '';
+                              });
+                            }
+                          },
+                          style: const TextStyle(
+                            fontFamily: 'Consolas',
+                            fontSize: 12.5,
+                            height: 1.55,
+                            color: Color(0xFF364158),
+                          ),
+                          decoration: const InputDecoration(
+                            hintText:
+                                'Напишите текст шаблона. Переменные: {{project_name}}, {{project_slug}}, {{project_description}}',
+                            alignLabelWithHint: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (_templateStatusMessage.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _templateStatusMessage,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _templateStatusIsError
+                                ? const Color(0xFFB74444)
+                                : const Color(0xFF267B5D),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: canDelete && !_savingTemplate
+                                ? () => _deleteCurrentTemplate(provider)
+                                : null,
+                            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                            label: const Text('Удалить'),
+                          ),
+                          const Spacer(),
+                          FilledButton.icon(
+                            onPressed: (_editingTemplateId == null || _savingTemplate)
+                                ? null
+                                : () => _saveCurrentTemplate(provider),
+                            icon: _savingTemplate
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.save_outlined, size: 18),
+                            label: Text(_templateDirty ? 'Сохранить шаблон*' : 'Сохранить шаблон'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 class _ImportTab extends StatefulWidget {
   const _ImportTab();
 

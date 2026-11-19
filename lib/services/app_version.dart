@@ -17,11 +17,22 @@ class ReleaseEntry {
 }
 
 class AppVersion {
-  static const String currentVersion = '2.1.52';
-  static const int currentBuildNumber = 52;
+  static const String currentVersion = '2.1.53';
+  static const int currentBuildNumber = 53;
   static const String fullVersion = '$currentVersion+$currentBuildNumber';
 
   static const List<ReleaseEntry> history = <ReleaseEntry>[
+    ReleaseEntry(
+      version: '2.1.53',
+      buildNumber: 53,
+      title: 'Встроенный редактор шаблонов прямо во вкладке «Инструкция» без всплывающих окон',
+      summary: 'Управление шаблонами и создание нового шаблона перенесены прямо внутрь основной вкладки «Инструкция» (без Dialog и отдельного маршрута Navigator), где гарантированно работает ввод с клавиатуры.',
+      changes: [
+        'Перенесено управление и создание шаблонов прямо внутрь вкладки «Инструкция» (без модального окна и отдельного маршрута Navigator)',
+        'Добавлена кнопка «Новый шаблон» прямо на панель вкладки «Инструкция» и внутрь редактора шаблонов',
+        'Обновлена версия до 2.1.53+53 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
+      ],
+    ),
     ReleaseEntry(
       version: '2.1.52',
       buildNumber: 52,
@@ -96,17 +107,6 @@ class AppVersion {
         'Возвращены _clearDirectorySafe, _copyDirectoryContentsSafe, _pruneHistory и _launchNewestExeIfAny в BuildBundleService как static-методы',
         'Устранена ошибка instance_member_access_from_static при вызове из applyDownloadedBuild',
         'Обновлена версия до 2.1.46+46 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
-      ],
-    ),
-    ReleaseEntry(
-      version: '2.1.45',
-      buildNumber: 45,
-      title: 'Панель окна в стиле macOS с поведением кнопок Windows',
-      summary: 'Добавлена верхняя панель окна в стиле macOS («светофор») с сохранением поведения кнопок и границ изменения размера окна Windows через Win32 и MethodChannel.',
-      changes: [
-        'Добавлен виджет MacOsWindowTitleBar с кнопками закрытия, сворачивания и разворачивания/восстановления окна и перетаскиванием заголовка',
-        'Настроен Win32-обработчик окна в windows/runner/flutter_window.cpp с сохранением рамки изменения размера и команд окна Windows',
-        'Обновлена версия до 2.1.45+45 в AppVersion, pubspec.yaml, CHANGELOG.md и HANDOFF.yaml',
       ],
     ),
   ];
